@@ -79,7 +79,7 @@ bookkeeper:
       storageClassName: io2
     ledgers:
       name: ledgers
-      size: 468Gi
+      size: 256Gi
       local_storage: false
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
