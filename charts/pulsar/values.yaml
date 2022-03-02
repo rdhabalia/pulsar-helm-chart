@@ -1053,7 +1053,7 @@ grafana:
   ## templates/grafana-service.yaml
   ##
   service:
-    type: LoadBalancer
+    type: ClusterIp
     port: 3000
     targetPort: 3000
     annotations: {}

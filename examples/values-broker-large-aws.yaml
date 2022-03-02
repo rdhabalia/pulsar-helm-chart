@@ -84,8 +84,25 @@ bookkeeper:
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
       storageClassName: gp2
+  configData:
+    # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_MEM: >
+      -Xms8g
+      -Xmx32g
+      -XX:MaxDirectMemorySize=8g
+    # configure the memory settings based on jvm memory settings
+    dbStorage_writeCacheMaxSizeMb: "8192"
+    dbStorage_readAheadCacheMaxSizeMb: "2048"
+    dbStorage_rocksDB_writeBufferSizeMB: "32"
+    dbStorage_rocksDB_blockCacheSize: "1147483648"
 broker:
   replicaCount: 3
+  configData:
+   # we use `bin/pulsar` for starting bookie daemons
+   PULSAR_MEM: >
+     -Xms8g
+     -Xmx32g
+     -XX:MaxDirectMemorySize=8g
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
