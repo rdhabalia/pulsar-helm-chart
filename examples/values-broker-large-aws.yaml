@@ -84,6 +84,13 @@ bookkeeper:
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
       storageClassName: gp2
+  resources:
+      limits:
+        memory: "48Gi"
+        cpu: "3"
+      requests:
+        memory: "40Gi"
+        cpu: "2"
   configData:
     # we use `bin/pulsar` for starting bookie daemons
     PULSAR_MEM: >
@@ -113,6 +120,13 @@ broker:
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
       storageClassName: gp2
+  resources:
+      limits:
+        memory: "48Gi"
+        cpu: "3"
+      requests:
+        memory: "40Gi"
+        cpu: "2"
       #
       ## Instead if you want to create a new storage class define it below
       ## If left undefined no storage class will be defined along with PVC
