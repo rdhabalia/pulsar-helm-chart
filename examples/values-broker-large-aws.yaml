@@ -66,7 +66,7 @@ zookeeper:
         # fsType: xfs
         # provisioner: kubernetes.io/gce-pd
 bookkeeper:
-  replicaCount: 3
+  replicaCount: 2
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
@@ -86,30 +86,32 @@ bookkeeper:
       storageClassName: gp2
   resources:
       limits:
-        memory: "48Gi"
+        memory: "64Gi"
         cpu: "3"
       requests:
-        memory: "40Gi"
+        memory: "64Gi"
         cpu: "2"
   configData:
     # we use `bin/pulsar` for starting bookie daemons
     PULSAR_MEM: >
       -Xms8g
-      -Xmx32g
-      -XX:MaxDirectMemorySize=8g
+      -Xmx16g
+      -XX:MaxDirectMemorySize=40g
     # configure the memory settings based on jvm memory settings
-    dbStorage_writeCacheMaxSizeMb: "8192"
+    dbStorage_writeCacheMaxSizeMb: "16384"
     dbStorage_readAheadCacheMaxSizeMb: "2048"
-    dbStorage_rocksDB_writeBufferSizeMB: "32"
+    dbStorage_rocksDB_writeBufferSizeMB: "64"
     dbStorage_rocksDB_blockCacheSize: "1147483648"
+    journalSyncData : "true"
 broker:
   replicaCount: 3
   configData:
    # we use `bin/pulsar` for starting bookie daemons
    PULSAR_MEM: >
-     -Xms8g
-     -Xmx32g
-     -XX:MaxDirectMemorySize=8g
+     -Xms16g
+     -Xmx16g
+     -XX:MaxDirectMemorySize=16g
+   functionsWorkerEnabled: "false"
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
@@ -122,7 +124,7 @@ broker:
       storageClassName: gp2
   resources:
       limits:
-        memory: "48Gi"
+        memory: "40Gi"
         cpu: "3"
       requests:
         memory: "40Gi"
