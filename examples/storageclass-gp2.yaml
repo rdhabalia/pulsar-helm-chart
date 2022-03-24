@@ -8,4 +8,4 @@ parameters:
   type: "gp2"
   iopsPerGB: "30000"
   encrypted: "true"
-  kmsKeyId: "d7b3f93b-af51-4c09-88b9-aa39b22230e1"
+  kmsKeyId: "arn:aws:kms:us-east-2:454759051864:key/d7b3f93b-af51-4c09-88b9-aa39b22230e1"
