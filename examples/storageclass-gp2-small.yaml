@@ -1,0 +1,11 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: gp2
+provisioner: kubernetes.io/aws-ebs
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: "gp2"
+  iopsPerGB: "1000"
+  encrypted: "true"
+  kmsKeyId: "arn:aws:kms:us-east-2:454759051864:key/d7b3f93b-af51-4c09-88b9-aa39b22230e1"
