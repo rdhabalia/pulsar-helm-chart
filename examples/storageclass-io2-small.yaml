@@ -1,7 +1,7 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: io2
+  name: io2-small
 provisioner: kubernetes.io/aws-ebs
 volumeBindingMode: WaitForFirstConsumer
 parameters:

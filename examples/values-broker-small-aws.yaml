@@ -56,7 +56,7 @@ zookeeper:
       local_storage: false
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
-      storageClassName: gp2
+      storageClassName: gp2-small
       #
       ## Instead if you want to create a new storage class define it below
       ## If left undefined no storage class will be defined along with PVC
@@ -76,14 +76,14 @@ bookkeeper:
       local_storage: false
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
-      storageClassName: io2
+      storageClassName: io2-small
     ledgers:
       name: ledgers
       size: 16Gi
       local_storage: false
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
-      storageClassName: gp2
+      storageClassName: gp2-small
   tolerations:
         - key: "dedicated"
           operator: "Equal"
@@ -101,7 +101,7 @@ broker:
       local_storage: false
       ## If you already have an existent storage class and want to reuse it, you can specify its name with the option below
       ##
-      storageClassName: gp2
+      storageClassName: gp2-small
       #
       ## Instead if you want to create a new storage class define it below
       ## If left undefined no storage class will be defined along with PVC

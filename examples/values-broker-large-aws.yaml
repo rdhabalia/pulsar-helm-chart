@@ -66,7 +66,7 @@ zookeeper:
         # fsType: xfs
         # provisioner: kubernetes.io/gce-pd
 bookkeeper:
-  replicaCount: 2
+  replicaCount: 10
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
@@ -91,6 +91,11 @@ bookkeeper:
       requests:
         memory: "64Gi"
         cpu: "2"
+  tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "application"
+          effect: "NoSchedule"
   configData:
     # we use `bin/pulsar` for starting bookie daemons
     PULSAR_MEM: >
