@@ -91,6 +91,7 @@ bookkeeper:
           effect: "NoSchedule"
 broker:
   replicaCount: 3
+  configData:
    functionsWorkerEnabled: "false"
   volumes:
     # use a persistent volume or emptyDir
