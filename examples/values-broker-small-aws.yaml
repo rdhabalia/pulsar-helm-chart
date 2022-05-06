@@ -131,6 +131,10 @@ bookkeeper:
 
 broker:
   replicaCount: 3
+  serviceAccount:
+    name: athenz-cert-issuer
+    annotations: 
+      eks.amazonaws.com/role-arn: arn:aws:iam::454759051864:role/irsa-awstest
   configData:
    functionsWorkerEnabled: "false"
    PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"

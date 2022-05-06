@@ -102,7 +102,25 @@ spec:
         {{ end }}
         {{- end }}
       terminationGracePeriodSeconds: {{ .Values.broker.gracePeriod }}
+      serviceAccountName: athenz-cert-issuer
       initContainers:
+      - name: init-sia
+        image: docker.ouroath.com:4443/containers/sia-eks:1.22.0-20220401
+        imagePullPolicy: Always
+        command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        env:
+          - name: AWS_REGION
+            value: us-east-2
+        resources:
+          - requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - name: sia-volume
+            mountPath: /var/lib/sia
+          - name: sia
+            mountPath: /etc/sia/sia_config
+            subPath: sia_config
       # This init container will wait for zookeeper to be ready before
       # deploying the bookies
       - name: wait-zookeeper-ready
@@ -160,6 +178,31 @@ spec:
         volumeMounts:
         {{- include "pulsar.broker.certs.volumeMounts" . | nindent 10 }}
       containers:
+      - name: centos
+        image: centos
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo $(date -u) >> /data/out.txt; sleep 5; done"]
+        volumeMounts:
+          - mountPath: /var/lib/sia
+            name: sia-volume
+          - mountPath: /var/run/tls
+            name: tls-certs
+      - name: sia
+        image: docker.ouroath.com:4443/containers/sia-eks:1.22.0-20220401
+        env:
+          - name: AWS_REGION
+            value: us-east-2
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - mountPath: /var/lib/sia
+            name: sia-volume
+          - mountPath: /var/run/tls
+            name: tls-certs
+          - name: sia
+            mountPath: /etc/sia/sia_config
+            subPath: sia_config
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}"
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
@@ -194,6 +237,19 @@ spec:
           failureThreshold: {{ .Values.broker.probe.startup.failureThreshold }}
         {{- end }}
       {{- if .Values.broker.resources }}
+      volumes:
+        - name: tls-certs
+          emptyDir:
+            medium: Memory
+        - name: sia-volume
+          emptyDir:
+            medium: Memory
+        - name: sia
+          configMap:
+            name: awstest-sia
+            items:
+              - key: sia_config
+                path: sia_config
         resources:
 {{ toYaml .Values.broker.resources | indent 10 }}
       {{- end }}
