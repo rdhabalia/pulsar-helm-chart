@@ -36,6 +36,15 @@ components:
   # pulsar manager
   pulsar_manager: false
 
+## Images
+##
+## Control what images to use for each component
+images:
+  broker:
+    repository: docker.ouroath.com:4443/cms-all
+    tag: 2.7.48.3
+    pullPolicy: IfNotPresent
+
 monitoring:
   # monitoring - prometheus
   prometheus: true
@@ -65,6 +74,9 @@ zookeeper:
         # type: pd-ssd
         # fsType: xfs
         # provisioner: kubernetes.io/gce-pd
+  configData:
+    # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
 bookkeeper:
   replicaCount: 3
   volumes:
@@ -89,10 +101,50 @@ bookkeeper:
           operator: "Equal"
           value: "application"
           effect: "NoSchedule"
+  configData:
+    # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
+    PULSAR_MEM: >
+      -Xms128m
+      -Xmx256m
+      -XX:MaxDirectMemorySize=256m
+    PULSAR_GC: >
+      -XX:+UseG1GC
+      -XX:MaxGCPauseMillis=10
+      -XX:+ParallelRefProcEnabled
+      -XX:+UnlockExperimentalVMOptions
+      -XX:+DoEscapeAnalysis
+      -XX:ParallelGCThreads=4
+      -XX:ConcGCThreads=4
+      -XX:G1NewSizePercent=33
+      -XX:+DisableExplicitGC
+      -XX:-ResizePLAB
+      -XX:+ExitOnOutOfMemoryError
+      -XX:+PerfDisableSharedMem
+      -XX:+PrintGCDetails
+      -verbosegc
+      -XX:+PerfDisableSharedMem
+      -XX:+PrintGCDetails
+      -XX:+IgnoreUnrecognizedVMOptions
+      -Xloggc:/pulsar/bookie-gc.log
+      -XX:G1LogLevel=finest
+
 broker:
   replicaCount: 3
   configData:
    functionsWorkerEnabled: "false"
+   PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
+   sia_config: |
+    {
+      "version": "1.0.0",
+      "service": "awstest",
+      "accounts": [
+        {
+          "domain":  "cms.aws.nonprod",
+          "account": "454759051864"
+        }
+      ]
+    }
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
