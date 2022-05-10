@@ -41,8 +41,8 @@ components:
 ## Control what images to use for each component
 images:
   broker:
-    repository: docker.ouroath.com:4443/cms-all
-    tag: 2.7.48.3
+    repository: docker.ouroath.com:4443/cms
+    tag: latest
     pullPolicy: IfNotPresent
 
 monitoring:
@@ -138,6 +138,21 @@ broker:
   configData:
    functionsWorkerEnabled: "false"
    PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
+   tlsCertificateFilePath: "/pulsar/conf/broker-cert.pem"
+   tlsKeyFilePath: "/pulsar/conf/broker-key.pem"
+   tlsRequireTrustedClientCertOnConnect: "false"
+   tlsCertRefreshCheckDurationSec: "300"
+   tlsTrustCertsFilePath: "/pulsar/conf/cacert.pem"
+   brokerServicePortTls: "6651"
+   tlsAllowInsecureConnection: "true"
+   tlsEnabled: "true"
+   tlsCiphers: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+   tlsProtocols: "TLSv1.2"
+   webServicePortTls: "4443"
+   brokerClientAuthenticationParameters: "tlsCertFile:/pulsar/conf/client-cert.pem,tlsKeyFile:/pulsar/conf/client-key.pem"
+   brokerClientAuthenticationPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationTls"
+   brokerClientTrustCertsFilePath: "/pulsar/conf/cacert.pem"
+   brokerClientTlsEnabled: "true"
    sia_config: |
     {
       "version": "1.0.0",
