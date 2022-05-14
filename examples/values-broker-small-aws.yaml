@@ -41,8 +41,12 @@ components:
 ## Control what images to use for each component
 images:
   broker:
-    repository: docker.ouroath.com:4443/cms-all
-    tag: 2.7.48.3
+    repository: docker.ouroath.com:4443/cms
+    tag: 2.7.48.12-yahoo
+    pullPolicy: IfNotPresent
+  bookie:
+    repository: docker.ouroath.com:4443/cms
+    tag: 2.7.48.12-yahoo
     pullPolicy: IfNotPresent
 
 monitoring:
@@ -76,6 +80,7 @@ zookeeper:
         # provisioner: kubernetes.io/gce-pd
   configData:
     # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_LOG_APPENDER: "RollingFile"
     PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
 bookkeeper:
   replicaCount: 3
@@ -103,7 +108,22 @@ bookkeeper:
           effect: "NoSchedule"
   configData:
     # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_LOG_APPENDER: "RollingFile"
     PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
+    PULSAR_LOG_CONF: "/pulsar/conf/log4j2.yaml"
+    tlsTrustStoreType: "PEM"
+    tlsClientAuthentication: "true"
+    tlsCertificatePath: "/pulsar/conf/broker-cert.pem"
+    tlsKeyStore: "/pulsar/conf/broker-key.pem"
+    authorizedRoles: "admin,client,localhost"
+    bookieAuthProviderFactoryClass: "org.apache.pulsar.BookieAuthTLSFactory"
+    tlsProviderFactoryClass: "org.apache.bookkeeper.tls.TLSContextFactory"
+    tlsCertFilesRefreshDurationSeconds: "900"
+    tlsAllowedRoles: "client,admin"
+    tlsEnabledCipherSuites: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    tlsEnabledProtocols: "TLSv1.2"
+    tlsKeyStoreType: "PEM"
+    tlsTrustStore: "/pulsar/conf/cacert.pem"
     PULSAR_MEM: >
       -Xms128m
       -Xmx256m
@@ -131,20 +151,52 @@ bookkeeper:
 
 broker:
   replicaCount: 3
+  serviceAccount:
+    name: athenz-cert-issuer
+    annotations: 
+      eks.amazonaws.com/role-arn: arn:aws:iam::454759051864:role/irsa-awstest
   configData:
    functionsWorkerEnabled: "false"
+   PULSAR_LOG_APPENDER: "RollingFile"
    PULSAR_ROUTING_APPENDER_DEFAULT: "RollingFile"
-   sia_config: |
-    {
-      "version": "1.0.0",
-      "service": "awstest",
-      "accounts": [
-        {
-          "domain":  "cms.aws.nonprod",
-          "account": "454759051864"
-        }
-      ]
-    }
+   PULSAR_LOG_CONF: "/pulsar/conf/log4j2.yaml"
+   authenticationEnabled: "true"
+   authenticationProviders: "org.apache.pulsar.broker.authentication.AuthenticationProviderTls"
+   authorizationEnabled: "true"
+   superUserRoles: "localhost,client,admin"
+   tlsCertificateFilePath: "/pulsar/conf/broker-cert.pem"
+   tlsKeyFilePath: "/pulsar/conf/broker-key.pem"
+   tlsRequireTrustedClientCertOnConnect: "false"
+   tlsCertRefreshCheckDurationSec: "300"
+   tlsTrustCertsFilePath: "/pulsar/conf/cacert.pem"
+   brokerServicePortTls: "6651"
+   tlsAllowInsecureConnection: "true"
+   tlsEnabled: "true"
+   tlsCiphers: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+   tlsProtocols: "TLSv1.2"
+   webServicePortTls: "4443"
+   brokerClientAuthenticationParameters: "tlsCertFile:/pulsar/conf/client-cert.pem,tlsKeyFile:/pulsar/conf/client-key.pem"
+   brokerClientAuthenticationPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationTls"
+   brokerClientTrustCertsFilePath: "/pulsar/conf/cacert.pem"
+   brokerClientTlsEnabled: "true"
+   bookkeeperTLSCertificateFilePath: "/pulsar/conf/client-cert.pem"
+   bookkeeperTLSClientAuthentication: "true"
+   bookkeeperTLSKeyFilePath: "/pulsar/conf/client-key.pem"
+   bookkeeperTLSKeyFileType: "PEM"
+   bookkeeperTLSProviderFactoryClass: "org.apache.bookkeeper.tls.TLSContextFactory"
+   bookkeeperTLSTrustCertTypes: "PEM"
+   bookkeeperTLSTrustCertsFilePath: "/pulsar/conf/cacert.pem"
+   bookkeeperTlsCertFilesRefreshDurationSeconds: "300"
+   brokerClientAuthenticationParameters: "tlsCertFile:/pulsar/conf/client-cert.pem,tlsKeyFile:/pulsar/conf/client-key.pem"
+   brokerClientAuthenticationPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationTls"
+   # client cert
+   tlsTrustCertsFilePath: "/pulsar/conf/cacert.pem"
+   authPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationTls"
+   authParams: "tlsCertFile:/pulsar/conf/client-cert.pem,tlsKeyFile:/pulsar/conf/client-key.pem"
+   brokerServiceUrl: "pulsar+ssl://localhost:6651"
+   webServiceUrl: "https://localhost:4443"
+
+
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
