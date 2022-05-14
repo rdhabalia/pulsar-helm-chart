@@ -42,11 +42,11 @@ components:
 images:
   broker:
     repository: docker.ouroath.com:4443/cms
-    tag: 2.7.48.12-yahoo
+    tag: 2.7.48.13-yahoo
     pullPolicy: IfNotPresent
   bookie:
     repository: docker.ouroath.com:4443/cms
-    tag: 2.7.48.12-yahoo
+    tag: 2.7.48.13-yahoo
     pullPolicy: IfNotPresent
 
 monitoring:
