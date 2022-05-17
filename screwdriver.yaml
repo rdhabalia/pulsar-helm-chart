@@ -1,0 +1,28 @@
+jobs:
+  pulsar-helm:
+    requires: [~pr, ~commit]
+    image: docker.ouroath.com:4443/gap-tools:latest
+
+    steps:
+      - install: |
+          echo ${HELM_VERSION}
+          cd /tmp
+          curl https://get.helm.sh/helm-v3.7.1-linux-amd64.tar.gz | tar xvfz -
+          mv linux-amd64/helm /usr/local/bin
+          chmod 755 /usr/local/bin/helm
+          pip3 install yq
+          cd $SD_SOURCE_DIR
+          export CHARTS_PATH=${SD_SOURCE_DIR}/charts/pulsar
+      - lint: |
+          helm --debug lint ${CHARTS_PATH}
+      - package: |
+          helm --debug package ${CHARTS_PATH} --destination $SD_ARTIFACTS_DIR
+      - artifactory-publish: |
+          export CHART_NAME=pulsar
+          if [ -z ${SD_PULL_REQUEST} ]
+          then
+            CHART_VERSION=$(helm show chart ${CHARTS_PATH}| yq -r .version)
+            export SRC_FILE=$SD_ARTIFACTS_DIR/${CHART_NAME}-${CHART_VERSION}.tgz
+            export DEST_FULLPATH="/cms_java/pulsar-helm/${CHART_NAME}-${CHART_VERSION}.tgz"
+            scp -P 4443 "$SRC_FILE" "artifactory-ssh-proxy.corp.yahoo.com:/${DEST_FULLPATH}"
+          fi
