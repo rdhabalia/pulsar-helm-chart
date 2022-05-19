@@ -202,6 +202,7 @@ spec:
           {{ .Values.broker.additionalCommand }}
         {{- end }}
           bin/apply-config-from-env.py conf/broker.conf;
+          bin/apply-config-from-env.py conf/client.conf;
           bin/gen-yml-from-env.py conf/functions_worker.yml;
           echo "OK" > status;
           {{- include "pulsar.broker.zookeeper.tls.settings" . | nindent 10 }}
