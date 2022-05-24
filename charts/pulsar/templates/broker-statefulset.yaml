@@ -114,7 +114,7 @@ spec:
       {{ if eq .Values.auth.authentication.provider "athenz" }}
         ## sia init container
       - name: init-sia
-        image: "{{ .Values.images.sia.repository }}:{{ .Values.images.sia.tag }}"
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
         resources:
@@ -122,28 +122,28 @@ spec:
             memory: 50M
             cpu: 10m
         volumeMounts:
-          - name: {{ .Values.auth.athenz.certs.sia_volume.name }}
-            mountPath: {{ .Values.auth.athenz.certs.sia_volume.path }}
-          - name: {{ .Values.auth.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.athenz.certs.sia_config.sub_path }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
       ## cameo init container
       - name: init-cameo
-        image: "{{ .Values.images.cameo.repository }}:{{ .Values.images.cameo.tag }}"
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
         imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.auth.athenz.certs.cameo.service_cert.path }}
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem
           - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.auth.athenz.certs.cameo.service_cert.key }}
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.key.pem
           - name: CERT_GROUP
-            value: {{ .Values.auth.athenz.certs.cameo.cert.group }}
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.group }}
           - name: CERT_KEY
-            value: {{ .Values.auth.athenz.certs.cameo.cert.key }}
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.key }}
           - name: PRIVATEKEY_KEY
-            value: {{ .Values.auth.athenz.certs.cameo.private_key }}
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.private_key }}
           - name: INIT_RUN
-            value: {{ .Values.auth.athenz.certs.cameo.init_run }}
+            value: "true"
         resources:
           requests:
             memory: "128M"
@@ -152,10 +152,10 @@ spec:
             memory: "150M"
             cpu: "500m"
         volumeMounts:
-          - mountPath: {{ .Values.auth.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.athenz.certs.tls_certs.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       {{ end }}
       {{ end }}
 # This init container will wait for zookeeper to be ready before
@@ -216,34 +216,34 @@ spec:
       {{ if .Values.auth.authentication.enabled }}
       {{ if eq .Values.auth.authentication.provider "athenz" }}
       - name: sia
-        image: "{{ .Values.images.sia.repository }}:{{ .Values.images.sia.tag }}"
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         resources:
           requests:
             memory: 50M
             cpu: 10m
         volumeMounts:
-          - mountPath: {{ .Values.auth.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.athenz.certs.sia_volume.name }}
-          - name: {{ .Values.auth.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.athenz.certs.sia_config.sub_path }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
       - name: cameo
-        image: "{{ .Values.images.cameo.repository }}:{{ .Values.images.cameo.tag }}"
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
         imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.auth.athenz.certs.cameo.service_cert.path }}
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem
           - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.auth.athenz.certs.cameo.service_cert.key }}
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.key.pem
           - name: CERT_GROUP
-            value: {{ .Values.auth.athenz.certs.cameo.cert.group }}
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.group }}
           - name: CERT_KEY
-            value: {{ .Values.auth.athenz.certs.cameo.cert.key }}
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.key }}
           - name: PRIVATEKEY_KEY
-            value: {{ .Values.auth.athenz.certs.cameo.private_key }}
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.private_key }}
         resources:
           requests:
             memory: "50M"
@@ -252,10 +252,10 @@ spec:
             memory: "150M"
             cpu: "250m"
         volumeMounts:
-          - mountPath: {{ .Values.auth.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.athenz.certs.tls_certs.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       {{ end }}
       {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}"
@@ -334,10 +334,10 @@ spec:
         volumeMounts:
           {{- if .Values.auth.authentication.enabled }}
             {{ if eq .Values.auth.authentication.provider "athenz" }}
-            - mountPath: {{ .Values.auth.athenz.certs.sia_volume.path }}
-              name: {{ .Values.auth.athenz.certs.sia_volume.name }}
-            - mountPath: {{ .Values.auth.athenz.certs.tls_certs.path }}
-              name: {{ .Values.auth.athenz.certs.tls_certs.name }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
             {{ end }}
           {{- if eq .Values.auth.authentication.provider "jwt" }}
           - mountPath: "/pulsar/keys"
@@ -361,16 +361,16 @@ spec:
       {{ if eq .Values.auth.authentication.provider "athenz" }}
       - name: tls-certs
         emptyDir:
-          medium: {{ .Values.auth.athenz.certs.tls_certs.medium }}
+          medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
       - name: sia-volume
         emptyDir:
-          medium: {{ .Values.auth.athenz.certs.sia_volume.medium }}
+          medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
       - name: sia
         configMap:
           name: "{{ .Values.broker.service_account.configmap }}"
           items:
-            - key: {{ .Values.auth.athenz.certs.sia_config.key.name }}
-              path: {{ .Values.auth.athenz.certs.sia_config.key.path }}
+            - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
+              path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
       {{ end }}
       {{ end }}
       {{- if .Values.broker.extraVolumes }}

@@ -441,7 +441,8 @@ zookeeper:
     maxUnavailable: 1
   service_account:
     name: "replace"
-    annotations: {}
+    annotations:
+      eks:amazonaws:com/role-arn: "test"
     configmap: "replace"
 
 ## Pulsar: Bookkeeper cluster
@@ -627,7 +628,8 @@ bookkeeper:
     maxUnavailable: 1
   service_account:
     name: "test"
-    annotations: {}
+    annotations:
+      eks:amazonaws:com/role-arn: "test"
     configmap: "test"
 
 ## Pulsar: Bookkeeper AutoRecovery
@@ -811,7 +813,8 @@ broker:
   ## templates/broker-service-account.yaml
   service_account:
     name: "replace"
-    annotations: {}
+    annotations:
+      eks:amazonaws:com/role-arn: "test"
     configmap: "replace"
 
 ## Pulsar: Functions Worker
