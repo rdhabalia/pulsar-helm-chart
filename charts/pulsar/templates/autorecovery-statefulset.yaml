@@ -96,7 +96,7 @@ spec:
                       operator: In
                       values:
                       - {{ .Release.Name }}
-                    - key: "component" 
+                    - key: "component"
                       operator: In
                       values:
                       - {{ .Values.autorecovery.component }}
@@ -104,10 +104,35 @@ spec:
         {{ end }}
         {{- end }}
       terminationGracePeriodSeconds: {{ .Values.autorecovery.gracePeriod }}
-    {{- if and .Values.rbac.enabled  .Values.rbac.psp }}
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      serviceAccountName: "{{ .Values.autorecovery.service_account.name }}"
+      {{ end }}
+      {{ else }}
+    {{- if and .Values.rbac.enabled .Values.rbac.psp }}
       serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
     {{- end}}
+      {{ end }}
       initContainers:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      ## sia init container
+      - name: init-sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+      {{ end }}
+      {{ end }}
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before deploying the bookies
       - name: pulsar-bookkeeper-verify-clusterid
@@ -123,6 +148,25 @@ spec:
         volumeMounts:
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
       containers:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      - name: sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+        {{ end }}
+        {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         image: "{{ .Values.images.autorecovery.repository }}:{{ .Values.images.autorecovery.tag }}"
         imagePullPolicy: {{ .Values.images.autorecovery.pullPolicy }}
@@ -148,8 +192,27 @@ spec:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         volumeMounts:
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
+        {{- if .Values.auth.authentication.enabled }}
+        {{- if eq .Values.auth.authentication.provider "athenz" }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+        {{- end }}
+        {{- end }}
       volumes:
       {{- include "pulsar.autorecovery.certs.volumes" . | nindent 6 }}
       {{- include "pulsar.imagePullSecrets" . | nindent 6}}
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      - name: sia-volume
+        emptyDir:
+          medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
+      - name: sia
+        configMap:
+          name: "{{ .Values.autorecovery.service_account.configmap }}"
+          items:
+            - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
+              path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
+      {{ end }}
+      {{ end }}
 {{- end }}
 
