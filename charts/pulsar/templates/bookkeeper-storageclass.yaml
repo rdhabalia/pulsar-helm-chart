@@ -42,30 +42,38 @@ parameters:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.journal.name }}"
+  name: {{ .Values.bookkeeper.volumes.journal.name }}
   namespace: {{ template "pulsar.namespace" . }}
   labels:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.bookkeeper.component }}
 provisioner: {{ .Values.bookkeeper.volumes.journal.storageClass.provisioner }}
+volumeBindingMode: {{ .Values.bookkeeper.volumes.journal.storageClass.volumeBindingMode }}
 parameters:
   type: {{ .Values.bookkeeper.volumes.journal.storageClass.type }}
-  fsType: {{ .Values.bookkeeper.volumes.journal.storageClass.fsType }}
+#  fsType: {{ .Values.bookkeeper.volumes.journal.storageClass.fsType }}
+  iopsPerGB: {{ .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB }}
+  encrypted: {{ .Values.bookkeeper.volumes.journal.storageClass.encrypted }}
+  kmsKeyId: {{ .Values.bookkeeper.volumes.journal.storageClass.kmsKeyId }}
 {{- end }}
 ---
 {{- if and (not .Values.bookkeeper.volumes.ledgers.local_storage) .Values.bookkeeper.volumes.ledgers.storageClass }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.ledgers.name }}"
+  name: {{ .Values.bookkeeper.volumes.ledgers.name }}
   namespace: {{ template "pulsar.namespace" . }}
   labels:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.bookkeeper.component }}
 provisioner: {{ .Values.bookkeeper.volumes.ledgers.storageClass.provisioner }}
+volumeBindingMode: {{ .Values.bookkeeper.volumes.ledgers.storageClass.volumeBindingMode }}
 parameters:
   type: {{ .Values.bookkeeper.volumes.ledgers.storageClass.type }}
-  fsType: {{ .Values.bookkeeper.volumes.ledgers.storageClass.fsType }}
+#  fsType: {{ .Values.bookkeeper.volumes.ledgers.storageClass.fsType }}
+  iopsPerGB: {{ .Values.bookkeeper.volumes.ledgers.storageClass.iopsPerGB }}
+  encrypted: {{ .Values.bookkeeper.volumes.ledgers.storageClass.encrypted }}
+  kmsKeyId: {{ .Values.bookkeeper.volumes.ledgers.storageClass.kmsKeyId }}
 {{- end }}
 {{- end }}
 

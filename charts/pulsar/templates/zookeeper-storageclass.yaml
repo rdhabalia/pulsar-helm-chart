@@ -26,15 +26,20 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.data.name }}"
+  name: {{ .Values.zookeeper.volumes.data.name }}
   namespace: {{ template "pulsar.namespace" . }}
   labels:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.zookeeper.component }}
 provisioner: {{ .Values.zookeeper.volumes.data.storageClass.provisioner }}
+volumeBindingMode: {{ .Values.zookeeper.volumes.data.storageClass.volumeBindingMode }}
+reclaimPolicy: {{ .Values.zookeeper.volumes.data.storageClass.reclaimPolicy }}
 parameters:
   type: {{ .Values.zookeeper.volumes.data.storageClass.type }}
-  fsType: {{ .Values.zookeeper.volumes.data.storageClass.fsType }}
+#  fsType: {{ .Values.zookeeper.volumes.data.storageClass.fsType }}
+  iopsPerGB: {{ .Values.zookeeper.volumes.data.storageClass.iopsPerGB }}
+  encrypted: {{ .Values.zookeeper.volumes.data.storageClass.encrypted }}
+  kmsKeyId: {{ .Values.zookeeper.volumes.data.storageClass.kmsKeyId }}
 {{- end }}
 {{- end }}
 {{- end }}
