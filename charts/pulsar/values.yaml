@@ -126,6 +126,8 @@ components:
   toolset: true
   # pulsar manager
   pulsar_manager: false
+  # apache traffic server - SNI proxy
+  trafficserver: false
 
 ## Monitoring Components
 ##
@@ -197,6 +199,10 @@ images:
     tag: v0.2.0
     pullPolicy: IfNotPresent
     hasCommand: false
+  trafficserver:
+    repository: docker.ouroath.com:4443/cms/trafficserver-base
+    tag: latest
+    pullPolicy: Always
 
 ## TLS
 ## templates/tls-certs.yaml
@@ -1030,6 +1036,38 @@ toolset:
       -XX:MaxDirectMemorySize=128M
   ## Add a custom command to the start up process of the toolset pods (e.g. update-ca-certificates, jvm commands, etc)
   additionalCommand:
+
+## Pulsar: Trafficserver
+## templates/trafficserver-deployment.yaml
+##
+trafficserver:
+  # use a component name that matches your grafana configuration
+  # so the metrics are correctly rendered in grafana dashboard
+  component: trafficserver
+  replicaCount: 1
+  restartPodsOnConfigMapChange: false
+  annotations: {}
+  tolerations: []
+  resources:
+    limits:
+      cpu: "1"
+      memory: 196Mi
+    requests:
+      memory: 128Mi
+      cpu: 100m
+  ### Trafficserver service account
+  ## templates/trafficserver-service-account.yaml
+  service_account:
+    name: "replace"
+    annotations:
+      eks:amazonaws:com/role-arn: "test"
+    configmap: "replace"
+  ports:
+    pulsarssl: 6651
+    proxy: 6651
+  ## templates/trafficserver-service.yaml
+  service:
+    type: LoadBalancer
 
 #############################################################
 ### Monitoring Stack : Prometheus / Grafana

@@ -1,0 +1,35 @@
+{{- if .Values.components.trafficserver }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-clusterrolebinding"
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-clusterrole"
+subjects:
+- kind: ServiceAccount
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-acct"
+  namespace: {{ template "pulsar.namespace" . }}
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-clusterrole"
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+rules:
+- apiGroups: [""]
+  resources:
+    - pods
+    - services
+  verbs:
+    - list
+    - watch
+    - get
+---
+
+{{- end }}

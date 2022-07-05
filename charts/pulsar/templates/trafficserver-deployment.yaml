@@ -1,0 +1,136 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+{{- if .Values.components.trafficserver }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+    component: {{ .Values.trafficserver.component }}
+spec:
+  replicas: {{ .Values.trafficserver.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pulsar.matchLabels" . | nindent 6 }}
+      component: {{ .Values.trafficserver.component }}
+  template:
+    metadata:
+      labels:
+        {{- include "pulsar.template.labels" . | nindent 8 }}
+        component: {{ .Values.trafficserver.component }}
+      annotations:
+        {{- if .Values.trafficserver.restartPodsOnConfigMapChange }}
+        checksum/config: {{ include (print $.Template.BasePath "/trafficserver-configmap.yaml") . | sha256sum }}
+        {{- end }}
+{{ toYaml .Values.trafficserver.annotations | indent 8 }}
+    spec:
+    {{- if .Values.trafficserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.trafficserver.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.trafficserver.tolerations }}
+      tolerations:
+{{ toYaml .Values.trafficserver.tolerations | indent 8 }}
+    {{- end }}
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      serviceAccountName: "{{ .Values.trafficserver.service_account.name }}"
+      {{ end }}
+      {{ else }}
+      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-acct"
+      {{ end }}
+      initContainers:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+        ## sia init container
+        - name: init-sia
+          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+          command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+          resources:
+            requests:
+              memory: 50M
+              cpu: 10m
+          volumeMounts:
+            - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+      {{ end }}
+      {{ end }}
+      containers:
+        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+          image: "{{ .Values.images.trafficserver.repository }}:{{ .Values.images.trafficserver.tag }}"
+          imagePullPolicy: {{ .Values.images.trafficserver.pullPolicy }}
+          command: ["/scripts/wrapper.sh"]
+        {{- if .Values.trafficserver.resources }}
+          resources:
+{{ toYaml .Values.trafficserver.resources | indent 12 }}
+        {{- end }}
+          volumeMounts:
+          {{- if .Values.auth.authentication.enabled }}
+            {{ if eq .Values.auth.authentication.provider "athenz" }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            {{ end }}
+          {{- end }}
+            - mountPath: /scripts
+              name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+        {{ if .Values.auth.authentication.enabled }}
+        {{ if eq .Values.auth.authentication.provider "athenz" }}
+        - name: sia
+          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+          resources:
+            requests:
+              memory: 50M
+              cpu: 10m
+          volumeMounts:
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+        {{ end }}
+        {{ end }}
+      volumes:
+        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+          configMap:
+            name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+            defaultMode: 0744
+        {{ if .Values.auth.authentication.enabled }}
+        {{ if eq .Values.auth.authentication.provider "athenz" }}
+        - name: sia-volume
+          emptyDir:
+            medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
+        - name: sia
+          configMap:
+            name: "{{ .Values.trafficserver.service_account.configmap }}"
+            items:
+              - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
+                path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
+        {{ end }}
+        {{ end }}
+{{- end }}
