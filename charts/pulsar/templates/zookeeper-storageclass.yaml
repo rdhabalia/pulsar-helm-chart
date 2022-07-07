@@ -37,8 +37,8 @@ reclaimPolicy: {{ .Values.zookeeper.volumes.data.storageClass.reclaimPolicy }}
 parameters:
   type: {{ .Values.zookeeper.volumes.data.storageClass.type }}
 #  fsType: {{ .Values.zookeeper.volumes.data.storageClass.fsType }}
-  iopsPerGB: {{ .Values.zookeeper.volumes.data.storageClass.iopsPerGB }}
-  encrypted: {{ .Values.zookeeper.volumes.data.storageClass.encrypted }}
+  iopsPerGB: {{ .Values.zookeeper.volumes.data.storageClass.iopsPerGB | quote }}
+  encrypted: {{ .Values.zookeeper.volumes.data.storageClass.encrypted | quote }}
   kmsKeyId: {{ .Values.zookeeper.volumes.data.storageClass.kmsKeyId }}
 {{- end }}
 {{- end }}
