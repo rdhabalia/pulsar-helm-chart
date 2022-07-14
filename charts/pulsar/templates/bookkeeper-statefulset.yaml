@@ -212,6 +212,7 @@ spec:
           {{ .Values.bookkeeper.additionalCommand }}
         {{- end }}
           bin/apply-config-from-env.py conf/bookkeeper.conf;
+          cat conf/bookkeeper.conf;
           {{- include "pulsar.bookkeeper.zookeeper.tls.settings" . | nindent 10 }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar bookie;
       {{- if and .Values.rbac.enabled .Values.rbac.psp }}
