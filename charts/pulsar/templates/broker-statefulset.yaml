@@ -314,7 +314,10 @@ spec:
             sleep 10;
             bin/pulsar zookeeper-shell -server {{ template "pulsar.zookeeper.connect" . }} get {{ template "pulsar.broker.znode" . }};
           done;
-          cat conf/pulsar_env.sh;
+          cat conf/pulsar_env.sh; crond;
+          {{ if .Values.broker.healthCheck.enabled }}
+          echo "*/5 * * * *" /pulsar/bin/broker-healthcheck.sh | crontab -;
+          {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar broker;
         ports:
         # prometheus needs to access /metrics endpoint
@@ -350,6 +353,10 @@ spec:
             readOnly: true
           {{- end }}
           {{- end }}
+          {{ if .Values.broker.healthCheck.enabled }}
+          - mountPath: /metrics-data
+            name: metrics-volume
+          {{ end }}
           {{- if .Values.broker.extraVolumeMounts }}
 {{ toYaml .Values.broker.extraVolumeMounts | indent 10 }}
           {{- end }}
@@ -374,6 +381,10 @@ spec:
             - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
               path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
       {{ end }}
+      {{ end }}
+      {{ if .Values.broker.healthCheck.enabled }}
+      - name: metrics-volume
+        emptyDir: {}
       {{ end }}
       {{- if .Values.broker.extraVolumes }}
 {{ toYaml .Values.broker.extraVolumes | indent 6 }}

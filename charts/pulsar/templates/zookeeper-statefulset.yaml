@@ -162,7 +162,10 @@ spec:
           bin/apply-config-from-env.py conf/zookeeper.conf;
           {{- include "pulsar.zookeeper.tls.settings" . | nindent 10 }}
           bin/generate-zookeeper-config.sh conf/zookeeper.conf;
-          cat conf/zookeeper.conf;
+          cat conf/zookeeper.conf; crond;
+          {{ if .Values.zookeeper.healthCheck.enabled }}
+          echo "*/5 * * * *" /pulsar/bin/zookeeper-healthcheck.sh | crontab -;
+          {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar zookeeper;
         ports:
         # prometheus needs to access /metrics endpoint
@@ -268,6 +271,10 @@ spec:
           mountPath: "/pulsar/keytool/keytool.sh"
           subPath: keytool.sh
         {{- end }}
+        {{ if .Values.zookeeper.healthCheck.enabled }}
+        - mountPath: /metrics-data
+          name: metrics-volume
+        {{ end }}
         {{- if .Values.zookeeper.extraVolumeMounts }}
 {{ toYaml .Values.zookeeper.extraVolumeMounts | indent 8 }}
         {{- end }}
@@ -289,6 +296,10 @@ spec:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.data.name }}"
         emptyDir: {}
       {{- end }}
+      {{ if .Values.zookeeper.healthCheck.enabled }}
+      - name: metrics-volume
+        emptyDir: {}
+      {{ end }}
       {{- if .Values.zookeeper.extraVolumes }}
 {{ toYaml .Values.zookeeper.extraVolumes | indent 6 }}
       {{- end }}

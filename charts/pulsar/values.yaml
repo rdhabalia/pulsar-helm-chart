@@ -349,6 +349,8 @@ zookeeper:
     leaderElection: 3888
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
+  healthCheck:
+    enabled: false
   probe:
     liveness:
       enabled: true
@@ -484,6 +486,8 @@ bookkeeper:
     bookie: 3181
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
+  healthCheck:
+    enabled: false
   probe:
     liveness:
       enabled: true
@@ -667,6 +671,8 @@ autorecovery:
   annotations: {}
   # tolerations: []
   gracePeriod: 30
+  healthCheck:
+    enabled: false
   resources:
     requests:
       memory: 64Mi
@@ -733,6 +739,8 @@ broker:
     pulsarssl: 6651
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
+  healthCheck:
+    enabled: false
   probe:
     liveness:
       enabled: true

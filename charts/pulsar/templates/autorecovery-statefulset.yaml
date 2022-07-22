@@ -181,8 +181,11 @@ spec:
         command: ["sh", "-c"]
         args:
         - >
-          bin/apply-config-from-env.py conf/bookkeeper.conf;
+          bin/apply-config-from-env.py conf/bookkeeper.conf; crond;
           {{- include "pulsar.autorecovery.zookeeper.tls.settings" . | nindent 10 }}
+          {{ if .Values.autorecovery.healthCheck.enabled }}
+          echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh | crontab -;
+          {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/bookkeeper autorecovery
         ports:
         - name: http
@@ -198,6 +201,10 @@ spec:
             name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
         {{- end }}
         {{- end }}
+        {{ if .Values.autorecovery.healthCheck.enabled }}
+          - mountPath: /metrics-data
+            name: metrics-volume
+        {{ end }}
       volumes:
       {{- include "pulsar.autorecovery.certs.volumes" . | nindent 6 }}
       {{- include "pulsar.imagePullSecrets" . | nindent 6}}
@@ -213,6 +220,10 @@ spec:
             - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
               path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
       {{ end }}
+      {{ end }}
+      {{ if .Values.autorecovery.healthCheck.enabled }}
+      - name: metrics-volume
+        emptyDir: {}
       {{ end }}
 {{- end }}
 
