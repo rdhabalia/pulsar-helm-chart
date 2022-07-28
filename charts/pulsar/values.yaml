@@ -1076,6 +1076,12 @@ trafficserver:
   ## templates/trafficserver-service.yaml
   service:
     type: LoadBalancer
+  privatelink:
+    enabled: true
+    component: privatelink
+    type: LoadBalancer
+    annotations: {}
+  tolerations: []
 
 #############################################################
 ### Monitoring Stack : Prometheus / Grafana
