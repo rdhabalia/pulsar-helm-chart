@@ -1,0 +1,325 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# add athenz n cameo changes
+
+{{- if .Values.components.adminproxy }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+    component: {{ .Values.adminproxy.component }}
+spec:
+  serviceName: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
+  replicas: {{ .Values.adminproxy.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pulsar.matchLabels" . | nindent 6 }}
+      component: {{ .Values.adminproxy.component }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        {{- include "pulsar.template.labels" . | nindent 8 }}
+        component: {{ .Values.adminproxy.component }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.adminproxy.ports.http }}"
+        {{- if .Values.adminproxy.restartPodsOnConfigMapChange }}
+        checksum/config: {{ include (print $.Template.BasePath "/adminproxy-configmap.yaml") . | sha256sum }}
+        {{- end }}
+{{- with .Values.adminproxy.annotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+    {{- if .Values.adminproxy.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.adminproxy.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.adminproxy.tolerations }}
+      tolerations:
+{{ toYaml .Values.adminproxy.tolerations | indent 8 }}
+    {{- end }}
+      affinity:
+        {{- if and .Values.affinity.anti_affinity .Values.adminproxy.affinity.anti_affinity}}
+        podAntiAffinity:
+          {{ if eq .Values.adminproxy.affinity.type "requiredDuringSchedulingIgnoredDuringExecution"}}
+          {{ .Values.adminproxy.affinity.type }}:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - "{{ template "pulsar.name" . }}"
+              - key: "release"
+                operator: In
+                values:
+                - {{ .Release.Name }}
+              - key: "component"
+                operator: In
+                values:
+                - {{ .Values.adminproxy.component }}
+            topologyKey: "kubernetes.io/hostname"
+        {{ else }}
+          {{ .Values.adminproxy.affinity.type }}:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                      - "{{ template "pulsar.name" . }}"
+                    - key: "release"
+                      operator: In
+                      values:
+                      - {{ .Release.Name }}
+                    - key: "component"
+                      operator: In
+                      values:
+                      - {{ .Values.adminproxy.component }}
+                topologyKey: "kubernetes.io/hostname"
+        {{ end }}
+        {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.adminproxy.gracePeriod }}
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      serviceAccountName: "{{ .Values.adminproxy.service_account.name }}"
+      {{ end }}
+      {{ else }}
+      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}-acct"
+      {{ end }}
+      initContainers:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+        ## sia init container
+      - name: init-sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+      ## cameo init container
+      - name: init-cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        env:
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.adminproxy.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.adminproxy.service_account.name }}.key.pem
+          - name: CERT_GROUP
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.group }}
+          - name: CERT_KEY
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.key }}
+          - name: PRIVATEKEY_KEY
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.private_key }}
+          - name: INIT_RUN
+            value: "true"
+        resources:
+          requests:
+            memory: "128M"
+            cpu: "250m"
+          limits:
+            memory: "150M"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+      {{ end }}
+      {{ end }}
+      containers:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      - name: sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+      - name: cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        env:
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.adminproxy.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.adminproxy.service_account.name }}.key.pem
+          - name: CERT_GROUP
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.group }}
+          - name: CERT_KEY
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.key }}
+          - name: PRIVATEKEY_KEY
+            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.private_key }}
+        resources:
+          requests:
+            memory: "50M"
+            cpu: "50m"
+          limits:
+            memory: "150M"
+            cpu: "250m"
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+      {{ end }}
+      {{ end }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
+        image: "{{ .Values.images.adminproxy.repository }}:{{ .Values.images.adminproxy.tag }}"
+        imagePullPolicy: {{ .Values.images.adminproxy.pullPolicy }}
+      {{- if .Values.adminproxy.resources }}
+        resources:
+{{ toYaml .Values.adminproxy.resources | indent 10 }}
+      {{- end }}
+        command: ["sh", "-c"]
+        args:
+        - >
+        {{- if .Values.adminproxy.additionalCommand }}
+          {{ .Values.adminproxy.additionalCommand }}
+        {{- end }}
+          bin/apply-config-from-env.py /pulsar/proxy/conf/proxy.conf;
+          cat /pulsar/proxy/conf/proxy.conf;
+          OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec proxy/bin/proxy /pulsar/proxy/conf/proxy.conf;
+      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
+        securityContext:
+          readOnlyRootFilesystem: false
+      {{- end}}
+        ports:
+        # prometheus needs to access /metrics endpoint
+        - name: http
+          containerPort: {{ .Values.adminproxy.ports.http }}
+        {{- if or (not .Values.tls.enabled) (not .Values.tls.adminproxy.enabled) }}
+        - name: "{{ .Values.tcpPrefix }}pulsar"
+          containerPort: {{ .Values.adminproxy.ports.pulsar }}
+        {{- end }}
+        {{- if and .Values.tls.enabled .Values.tls.adminproxy.enabled }}
+        - name: https
+          containerPort: {{ .Values.adminproxy.ports.https }}
+        - name: "{{ .Values.tlsPrefix }}pulsarssl"
+          containerPort: {{ .Values.adminproxy.ports.pulsarssl }}
+        {{- end }}
+        envFrom:
+        - configMapRef:
+            name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
+        volumeMounts:
+          {{- if .Values.auth.authentication.enabled }}
+            {{ if eq .Values.auth.authentication.provider "athenz" }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+            {{ end }}
+          {{- if eq .Values.auth.authentication.provider "jwt" }}
+          - mountPath: "/pulsar/keys"
+            name: token-keys
+            readOnly: true
+          - mountPath: "/pulsar/tokens"
+            name: adminproxy-token
+            readOnly: true
+          {{- end }}
+          {{- end }}
+          {{- if .Values.adminproxy.healthCheck.enabled }}
+            - mountPath: /metrics-data
+              name: metrics-volume
+          {{- end }}
+          {{- if .Values.adminproxy.extraVolumeMounts }}
+{{ toYaml .Values.adminproxy.extraVolumeMounts | indent 10 }}
+          {{- end }}
+          {{- include "pulsar.adminproxy.certs.volumeMounts" . | nindent 10 }}
+      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
+        securityContext:
+          readOnlyRootFilesystem: false
+      {{- end }}
+      volumes:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      - name: tls-certs
+        emptyDir:
+          medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
+      - name: sia-volume
+        emptyDir:
+          medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
+      - name: sia
+        configMap:
+          name: "{{ .Values.adminproxy.service_account.configmap }}"
+          items:
+            - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
+              path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
+      {{ end }}
+      {{ end }}
+      {{- if .Values.adminproxy.extraVolumes }}
+{{ toYaml .Values.adminproxy.extraVolumes | indent 6 }}
+      {{- end }}
+      {{- if .Values.auth.authentication.enabled }}
+      {{- if eq .Values.auth.authentication.provider "jwt" }}
+      - name: token-keys
+        secret:
+          {{- if not .Values.auth.authentication.jwt.usingSecretKey }}
+          secretName: "{{ .Release.Name }}-token-asymmetric-key"
+          {{- end}}
+          {{- if .Values.auth.authentication.jwt.usingSecretKey }}
+          secretName: "{{ .Release.Name }}-token-symmetric-key"
+          {{- end}}
+          items:
+            {{- if .Values.auth.authentication.jwt.usingSecretKey }}
+            - key: SECRETKEY
+              path: token/secret.key
+            {{- else }}
+            - key: PUBLICKEY
+              path: token/public.key
+            {{- end}}
+      - name: adminproxy-token
+        secret:
+          secretName: "{{ .Release.Name }}-token-{{ .Values.auth.superUsers.adminproxy }}"
+          items:
+            - key: TOKEN
+              path: adminproxy/token
+      {{- end}}
+      {{- end}}
+      {{- if .Values.adminproxy.healthCheck.enabled }}
+      - name: metrics-volume
+        emptyDir: {}
+      {{- end }}
+      {{- include "pulsar.adminproxy.certs.volumes" . | nindent 6 }}
+      {{- include "pulsar.imagePullSecrets" . | nindent 6}}
+{{- end }}
