@@ -43,8 +43,8 @@ data:
   journalDirectories: {{ $journalDirs | join "," | quote }}
   PULSAR_PREFIX_journalDirectories: {{ $journalDirs | join "," | quote }}
   {{- else }}
-  journalDirectories: "/pulsar/data/bookkeeper/journal"
-  PULSAR_PREFIX_journalDirectories: "/pulsar/data/bookkeeper/journal"
+  #journalDirectories: "/pulsar/data/bookkeeper/journal"
+  #PULSAR_PREFIX_journalDirectories: "/pulsar/data/bookkeeper/journal"
   {{- end }}
   {{- if .Values.bookkeeper.volumes.ledgers.useMultiVolumes }}
   {{- $ledgerDirs := list -}}
