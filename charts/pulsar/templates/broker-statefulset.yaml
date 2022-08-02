@@ -303,6 +303,9 @@ spec:
           {{ .Values.broker.additionalCommand }}
         {{- end }}
           bin/apply-config-from-env.py conf/broker.conf;
+        {{- if .Values.trafficserver.r53domain }}
+          bin/apply-broker-adveristedaddress.sh conf/broker.conf {{ .Values.trafficserver.r53domain }}
+        {{- end }}
           cat conf/broker.conf;
           bin/apply-config-from-env.py conf/client.conf;
           bin/gen-yml-from-env.py conf/functions_worker.yml;

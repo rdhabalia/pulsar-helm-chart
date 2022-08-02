@@ -163,6 +163,8 @@ data:
             pods = []
             for p in pods_json['items']:
                 pods.append(f"{p['metadata']['name']}.{p['metadata']['ownerReferences'][0]['name']}.{p['metadata']['namespace']}.svc.{{ .Values.clusterDomain }}")
+                pods.append(f"{p['metadata']['name']}.{p['metadata']['ownerReferences'][0]['name']}.{p['metadata']['namespace']}.{{ .Values.trafficserver.r53domain }}") # this is for the temporary regex which requires per-tenant wildcard SANS
+                pods.append(f"{p['metadata']['name']}-{p['metadata']['namespace']}.{{ .Values.trafficserver.r53domain }}") # this is for the single wildcard SAN
             svcs_req = urllib.request.Request(f"{APISERVER}/api/v1/services?labelSelector=component%3D{{ .Values.broker.component }}", headers={'Authorization': f"Bearer {TOKEN}"}, method='GET')
             svcs_resp = urllib.request.urlopen(svcs_req, cafile=CACERT)
             if svcs_resp.getcode() != 200 or svcs_resp.getheader('Content-Type') != 'application/json':
@@ -171,6 +173,8 @@ data:
             svcs = []
             for s in svcs_json['items']:
                 svcs.append(f"{s['metadata']['name']}.{s['metadata']['namespace']}.svc.{{ .Values.clusterDomain }}")
+                svcs.append(f"{s['metadata']['name']}.{s['metadata']['namespace']}.{{ .Values.trafficserver.r53domain }}") # this is for the temporary regex which requires per-tenant wildcard SANS
+                svcs.append(f"{s['metadata']['name']}-{s['metadata']['namespace']}.{{ .Values.trafficserver.r53domain }}") # this is for the single wildcard SAN
             with open('/var/tmp/sni.yaml', 'w') as conf:
                 print('sni:', file=conf)
                 for n in sorted(pods+svcs):
