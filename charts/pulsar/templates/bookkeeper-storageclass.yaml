@@ -52,7 +52,9 @@ volumeBindingMode: {{ .Values.bookkeeper.volumes.journal.storageClass.volumeBind
 parameters:
   type: {{ .Values.bookkeeper.volumes.journal.storageClass.type }}
 #  fsType: {{ .Values.bookkeeper.volumes.journal.storageClass.fsType }}
+{{- if  .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB }}
   iopsPerGB: {{ .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB | quote }}
+{{- end }}
   encrypted: {{ .Values.bookkeeper.volumes.journal.storageClass.encrypted | quote }}
   kmsKeyId: {{ .Values.bookkeeper.volumes.journal.storageClass.kmsKeyId }}
 {{- end }}
@@ -71,7 +73,9 @@ volumeBindingMode: {{ .Values.bookkeeper.volumes.ledgers.storageClass.volumeBind
 parameters:
   type: {{ .Values.bookkeeper.volumes.ledgers.storageClass.type }}
 #  fsType: {{ .Values.bookkeeper.volumes.ledgers.storageClass.fsType }}
+{{- if  .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB }}
   iopsPerGB: {{ .Values.bookkeeper.volumes.ledgers.storageClass.iopsPerGB | quote }}
+{{- end }}
   encrypted: {{ .Values.bookkeeper.volumes.ledgers.storageClass.encrypted | quote }}
   kmsKeyId: {{ .Values.bookkeeper.volumes.ledgers.storageClass.kmsKeyId }}
 {{- end }}
