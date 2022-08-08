@@ -44,7 +44,6 @@ spec:
         component: {{ .Values.broker.component }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.broker.ports.http }}"
         {{- if .Values.broker.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/broker-configmap.yaml") . | sha256sum }}
         {{- end }}
@@ -320,6 +319,10 @@ spec:
           cat conf/pulsar_env.sh; crond;
         {{- if .Values.broker.healthCheck.enabled }}
           echo "*/5 * * * *" /pulsar/bin/broker-healthcheck.sh | crontab -;
+          echo "starting health-check service";
+          echo "uvicorn healthcheck-metrics:app --host 0.0.0.0 --port {{ .Values.broker.ports.healthcheck }} --app-dir=/pulsar/bin &" >> /pulsar/bin/healthcheck-startup.sh;
+          bash /pulsar/bin/healthcheck-startup.sh;
+          echo "health-check service started";
         {{- end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar broker;
         ports:
@@ -330,6 +333,8 @@ spec:
         - name: "{{ .Values.tcpPrefix }}pulsar"
           containerPort: {{ .Values.broker.ports.pulsar }}
         {{- end }}
+        - name: health
+          containerPort: {{ .Values.broker.ports.healthcheck }}
         {{- if and .Values.tls.enabled .Values.tls.broker.enabled }}
         - name: https
           containerPort: {{ .Values.broker.ports.https }}

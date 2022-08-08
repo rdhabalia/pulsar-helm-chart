@@ -747,6 +747,7 @@ broker:
     https: 8443
     pulsar: 6650
     pulsarssl: 6651
+    healthcheck: 5000
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   healthCheck:

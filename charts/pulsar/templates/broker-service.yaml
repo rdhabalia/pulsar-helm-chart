@@ -33,9 +33,9 @@ spec:
   # prometheus needs to access /metrics endpoint
   - name: http
     port: {{ .Values.broker.ports.http }}
-  {{- if or (not .Values.tls.enabled) (not .Values.tls.broker.enabled) }}
-  - name: "{{ .Values.tcpPrefix }}pulsar"
-    port: {{ .Values.broker.ports.pulsar }}
+  {{- if .Values.broker.healthCheck.enabled }}
+  - name: health
+    port: {{ .Values.broker.ports.healthcheck }}
   {{- end }}
   {{- if and .Values.tls.enabled .Values.tls.broker.enabled }}
   - name: https
