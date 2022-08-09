@@ -44,7 +44,6 @@ spec:
         component: {{ .Values.bookkeeper.component }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.bookkeeper.ports.http }}"
         {{- if .Values.bookkeeper.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/bookkeeper-configmap.yaml") . | sha256sum }}
         {{- end }}
@@ -216,6 +215,9 @@ spec:
           {{- include "pulsar.bookkeeper.zookeeper.tls.settings" . | nindent 10 }}
           {{ if .Values.bookkeeper.healthCheck.enabled }}
           echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh | crontab -;
+          echo "uvicorn healthcheck-metrics:app --host 0.0.0.0 --port {{ .Values.bookkeeper.ports.healthcheck }} --app-dir=/pulsar/bin &" >> /pulsar/bin/healthcheck-startup.sh;
+          bash /pulsar/bin/healthcheck-startup.sh;
+          echo "health-check service started";
           {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar bookie;
       {{- if and .Values.rbac.enabled .Values.rbac.psp }}
@@ -225,6 +227,8 @@ spec:
         ports:
         - name: "{{ .Values.tcpPrefix }}bookie"
           containerPort: {{ .Values.bookkeeper.ports.bookie }}
+        - name: health
+          containerPort: {{ .Values.bookkeeper.ports.healthcheck }}
         - name: http
           containerPort: {{ .Values.bookkeeper.ports.http }}
         envFrom:
