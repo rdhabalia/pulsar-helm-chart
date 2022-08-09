@@ -16,7 +16,7 @@ jobs:
       - lint: |
           helm --debug lint ${CHARTS_PATH}
       - package: |
-          CHART_VERSION=$(curl -s "https://edge.artifactory.ouroath.com:4443/artifactory/api/storage/cms_java/pulsar-helm?lastModified" | jq -r '.uri' | sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+(-[0-9])).*/\1/p')          
+          CHART_VERSION=$(curl -s "https://edge.artifactory.ouroath.com:4443/artifactory/api/storage/cms_java/pulsar-helm?lastModified" | jq -r '.uri' | sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+(-[0-9]*)).*/\1/p')          
           if [[ "$CHART_VERSION" = "" ]];
           then
             echo "artifact not available"
