@@ -869,6 +869,7 @@ adminproxy:
     https: 8443
     pulsar: 6650
     pulsarssl: 6651
+    adminproxy: 4443
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   healthCheck:
@@ -941,8 +942,12 @@ adminproxy:
     name: "replace"
     annotations:
       eks:amazonaws:com/role-arn: "test"
-    configmap: "replace"    
-
+    configmap: "replace"
+  privatelink:
+    enabled: false
+    component: privatelink
+    type: LoadBalancer
+    annotations: { }
 
 ## Pulsar: Functions Worker
 ## templates/function-worker-configmap.yaml

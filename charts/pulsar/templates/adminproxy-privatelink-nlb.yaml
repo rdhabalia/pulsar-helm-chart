@@ -1,0 +1,24 @@
+---
+{{- if .Values.adminproxy.privatelink.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}-{{ .Values.adminproxy.privatelink.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+    component: {{ .Values.adminproxy.component }}-{{ .Values.adminproxy.privatelink.component }}
+  annotations:
+  {{- with .Values.adminproxy.privatelink.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.adminproxy.privatelink.type }}
+  ports:
+    - name: "proxy"
+      port: {{ .Values.adminproxy.ports.adminproxy }}
+      targetPort: {{ .Values.adminproxy.ports.adminproxy }}
+      protocol: TCP
+  selector:
+    component: {{ .Values.adminproxy.component }}
+{{- end }}

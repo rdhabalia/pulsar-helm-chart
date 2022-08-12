@@ -17,7 +17,7 @@
 # under the License.
 #
 
-  {{- if .Values.components.adminproxy }}
+{{- if .Values.components.adminproxy }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -47,4 +47,4 @@ spec:
   selector:
     {{- include "pulsar.matchLabels" . | nindent 4 }}
     component: {{ .Values.adminproxy.component }}
-  {{- end }}
+{{- end }}
