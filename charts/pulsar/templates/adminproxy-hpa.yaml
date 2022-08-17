@@ -17,7 +17,7 @@
 # under the License.
 #
 
-{{- if .Values.adminproxy.autoscaling.enabled }}
+{{- if and .Values.components.adminproxy .Values.adminproxy.autoscaling.enabled }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
