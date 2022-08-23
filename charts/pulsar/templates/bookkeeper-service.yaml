@@ -32,6 +32,8 @@ metadata:
 {{- end }}
 spec:
   ports:
+  - name: "{{ .Values.tcpPrefix }}bookie"
+    port: {{ .Values.bookkeeper.ports.bookie }}
   {{- if .Values.bookkeeper.healthCheck.enabled }}
   - name: health
     port: {{ .Values.bookkeeper.ports.healthcheck }}

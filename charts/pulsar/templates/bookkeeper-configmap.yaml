@@ -40,8 +40,10 @@ data:
   {{ range .Values.bookkeeper.volumes.journal.multiVolumes }}
   {{- $journalDirs = append $journalDirs .mountPath -}}
   {{- end }}
+  {{- if not .Values.bookkeeper.configData.journalDirectories }}
   journalDirectories: {{ $journalDirs | join "," | quote }}
   PULSAR_PREFIX_journalDirectories: {{ $journalDirs | join "," | quote }}
+  {{- end }}
   {{- else }}
   #journalDirectories: "/pulsar/data/bookkeeper/journal"
   #PULSAR_PREFIX_journalDirectories: "/pulsar/data/bookkeeper/journal"
@@ -51,7 +53,9 @@ data:
   {{ range .Values.bookkeeper.volumes.ledgers.multiVolumes }}
   {{- $ledgerDirs = append $ledgerDirs .mountPath -}}
   {{- end }}
+  {{- if not .Values.bookkeeper.configData.ledgerDirectories }}
   ledgerDirectories: {{ $ledgerDirs | join "," | quote }}
+  {{- end }}
   {{- else }}
   ledgerDirectories: "/pulsar/data/bookkeeper/ledgers"
   {{- end }}
