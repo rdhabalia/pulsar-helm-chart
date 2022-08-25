@@ -11,7 +11,7 @@ roleRef:
   name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-clusterrole"
 subjects:
 - kind: ServiceAccount
-  name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-acct"
+  name: "{{ .Values.trafficserver.service_account.name }}"
   namespace: {{ template "pulsar.namespace" . }}
 ---
 
