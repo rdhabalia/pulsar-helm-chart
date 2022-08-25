@@ -1186,7 +1186,7 @@ trafficserver:
   service_account:
     name: "replace"
     annotations:
-      eks:amazonaws:com/role-arn: "test"
+      eks.amazonaws.com/role-arn: "test"
     configmap: "replace"
   ports:
     pulsarssl: 6651
