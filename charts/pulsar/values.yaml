@@ -929,7 +929,8 @@ adminproxy:
   ## templates/broker-service.yaml
   ##
   service:
-    annotations: {}
+    type: LoadBalancer
+    annotations: { }
   ## Broker PodDisruptionBudget
   ## templates/broker-pdb.yaml
   ##
@@ -943,12 +944,7 @@ adminproxy:
     annotations:
       eks:amazonaws:com/role-arn: "test"
     configmap: "replace"
-  privatelink:
-    enabled: false
-    component: privatelink
-    type: LoadBalancer
-    annotations: { }
-
+    
 ## Pulsar: Functions Worker
 ## templates/function-worker-configmap.yaml
 ##
