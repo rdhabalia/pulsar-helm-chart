@@ -40,6 +40,12 @@ parameters:
 {{- if  .Values.zookeeper.volumes.data.storageClass.iopsPerGB }}
   iopsPerGB: {{ .Values.zookeeper.volumes.data.storageClass.iopsPerGB | quote }}
 {{- end }}
+{{- if  .Values.zookeeper.volumes.data.storageClass.iops }}
+  iops: {{ .Values.zookeeper.volumes.data.storageClass.iops | quote }}
+{{- end }}
+{{- if  .Values.zookeeper.volumes.data.storageClass.throughput }}
+  throughput: {{ .Values.zookeeper.volumes.data.storageClass.throughput | quote }}
+{{- end }}
   encrypted: {{ .Values.zookeeper.volumes.data.storageClass.encrypted | quote }}
   kmsKeyId: {{ .Values.zookeeper.volumes.data.storageClass.kmsKeyId }}
 {{- end }}

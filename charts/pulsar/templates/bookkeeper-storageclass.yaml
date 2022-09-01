@@ -55,6 +55,12 @@ parameters:
 {{- if  .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB }}
   iopsPerGB: {{ .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB | quote }}
 {{- end }}
+{{- if  .Values.bookkeeper.volumes.journal.storageClass.iops }}
+  iops: {{ .Values.bookkeeper.volumes.journal.storageClass.iops | quote }}
+{{- end }}
+{{- if  .Values.bookkeeper.volumes.journal.storageClass.throughput }}
+  throughput: {{ .Values.bookkeeper.volumes.journal.storageClass.throughput | quote }}
+{{- end }}
   encrypted: {{ .Values.bookkeeper.volumes.journal.storageClass.encrypted | quote }}
   kmsKeyId: {{ .Values.bookkeeper.volumes.journal.storageClass.kmsKeyId }}
 {{- end }}
@@ -73,8 +79,14 @@ volumeBindingMode: {{ .Values.bookkeeper.volumes.ledgers.storageClass.volumeBind
 parameters:
   type: {{ .Values.bookkeeper.volumes.ledgers.storageClass.type }}
 #  fsType: {{ .Values.bookkeeper.volumes.ledgers.storageClass.fsType }}
-{{- if  .Values.bookkeeper.volumes.journal.storageClass.iopsPerGB }}
+{{- if  .Values.bookkeeper.volumes.ledgers.storageClass.iopsPerGB }}
   iopsPerGB: {{ .Values.bookkeeper.volumes.ledgers.storageClass.iopsPerGB | quote }}
+{{- end }}
+{{- if  .Values.bookkeeper.volumes.ledgers.storageClass.iops }}
+  iops: {{ .Values.bookkeeper.volumes.ledgers.storageClass.iops | quote }}
+{{- end }}
+{{- if  .Values.bookkeeper.volumes.ledgers.storageClass.throughput }}
+  throughput: {{ .Values.bookkeeper.volumes.ledgers.storageClass.throughput | quote }}
 {{- end }}
   encrypted: {{ .Values.bookkeeper.volumes.ledgers.storageClass.encrypted | quote }}
   kmsKeyId: {{ .Values.bookkeeper.volumes.ledgers.storageClass.kmsKeyId }}
