@@ -212,6 +212,9 @@ spec:
           {{ .Values.bookkeeper.additionalCommand }}
         {{- end }}
           bin/apply-config-from-env.py conf/bookkeeper.conf;
+        {{- if .Values.bookkeeper.configData.dynamicConfig }} 
+          bin/apply-config-from-values.py "{{ .Values.bookkeeper.configData.dynamicConfig | quote}}" conf/bookkeeper.conf;
+        {{- end }}
           cat conf/bookkeeper.conf; crond;
           {{- include "pulsar.bookkeeper.zookeeper.tls.settings" . | nindent 10 }}
           {{ if .Values.bookkeeper.healthCheck.enabled }}

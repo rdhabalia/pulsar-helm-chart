@@ -303,6 +303,10 @@ spec:
           {{ .Values.broker.additionalCommand }}
         {{- end }}
           bin/apply-config-from-env.py conf/broker.conf;
+        {{- if .Values.broker.configData.dynamicConfig }}
+          echo "Applying dynamic config";
+          bin/apply-config-from-values.py {{ .Values.broker.configData.dynamicConfig | quote }} conf/broker.conf;
+        {{- end }}
         {{- if .Values.trafficserver.r53domain }}
           bin/apply-broker-advertisedaddress.sh conf/broker.conf {{ .Values.trafficserver.r53domain }} ;
         {{- end }}
