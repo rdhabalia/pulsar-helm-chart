@@ -48,6 +48,9 @@ spec:
         {{- if .Values.bookkeeper.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/bookkeeper-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.bookkeeper.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{- with .Values.bookkeeper.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}

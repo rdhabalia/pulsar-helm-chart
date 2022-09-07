@@ -48,6 +48,9 @@ spec:
         {{- if .Values.broker.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/broker-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.broker.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{- with .Values.broker.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}

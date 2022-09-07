@@ -45,6 +45,9 @@ spec:
         {{- if .Values.toolset.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/toolset-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.toolset.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{ toYaml .Values.toolset.annotations | indent 8 }}
     spec:
     {{- if .Values.toolset.nodeSelector }}

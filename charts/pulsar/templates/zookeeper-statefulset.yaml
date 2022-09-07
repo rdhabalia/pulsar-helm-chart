@@ -47,6 +47,9 @@ spec:
         {{- if .Values.zookeeper.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/zookeeper-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.zookeeper.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{ toYaml .Values.zookeeper.annotations | indent 8 }}
     spec:
     {{- if .Values.zookeeper.nodeSelector }}

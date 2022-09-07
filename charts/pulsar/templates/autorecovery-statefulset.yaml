@@ -48,6 +48,9 @@ spec:
         {{- if .Values.autorecovery.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/autorecovery-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.autorecovery.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{- with .Values.autorecovery.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}
