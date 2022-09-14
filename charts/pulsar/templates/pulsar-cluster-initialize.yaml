@@ -102,32 +102,32 @@ spec:
               {{- if not .Values.pulsar_metadata.configurationStore }}
               --configuration-store {{ template "pulsar.zookeeper.connect" . }}{{ .Values.metadataPrefix }} \
               {{- end }}
-              {{- if not .Values.pulsar_metadata.proxyUrl }}
+              {{- if .Values.pulsar_metadata.proxyUrl }}
               --proxy-url {{ .Values.pulsar_metadata.proxyUrl }} \
               {{- end }}
-              {{- if not .Values.pulsar_metadata.proxyProtocol }}
+              {{- if .Values.pulsar_metadata.proxyProtocol }}
               --proxy-protocol {{ .Values.pulsar_metadata.proxyProtocol }} \
               {{- end }}
-              {{ if eq .Values.pulsar_metadata.webUrl }}
+              {{- if .Values.pulsar_metadata.webUrl }}
               --web-service-url {{ .Values.pulsar_metadata.webUrl }} \
-              {{ else }}
+              {{- else }}
               --web-service-url http://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.http }}/ \
-              {{ end }}
-              {{ if eq .Values.pulsar_metadata.webUrlTls }}
+              {{- end }}
+              {{- if .Values.pulsar_metadata.webUrlTls }}
               --web-service-url-tls {{ .Values.pulsar_metadata.webUrlTls }} \
-              {{ else }}
+              {{- else }}
               --web-service-url-tls https://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.https }}/ \
-              {{ end }}
-              {{ if eq .Values.pulsar_metadata.brokerUrl }}
+              {{- end }}
+              {{- if .Values.pulsar_metadata.brokerUrl }}
               --broker-service-url {{ .Values.pulsar_metadata.brokerUrl }} \
-              {{ else }}
+              {{- else }}
               --broker-service-url pulsar://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.pulsar }}/ \
-              {{ end }}
-              {{ if eq .Values.pulsar_metadata.brokerUrlTls }}
+              {{- end }}
+              {{- if .Values.pulsar_metadata.brokerUrlTls }}
               --broker-service-url-tls {{ .Values.pulsar_metadata.brokerUrlTls }} \
-              {{ else }}
+              {{- else }}
               --broker-service-url-tls pulsar+ssl://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.pulsarssl }}/ ;
-              {{ end }}
+              {{- end }}
             {{- if .Values.extraInitCommand }}
               {{ .Values.extraInitCommand }}
             {{- end }}
