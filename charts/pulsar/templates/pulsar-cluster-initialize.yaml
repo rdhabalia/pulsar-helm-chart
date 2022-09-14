@@ -108,10 +108,26 @@ spec:
               {{- if not .Values.pulsar_metadata.proxyProtocol }}
               --proxy-protocol {{ .Values.pulsar_metadata.proxyProtocol }} \
               {{- end }}
+              {{ if eq .Values.pulsar_metadata.webUrl }}
+              --web-service-url {{ .Values.pulsar_metadata.webUrl }} \
+              {{ else }}
               --web-service-url http://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.http }}/ \
+              {{ end }}
+              {{ if eq .Values.pulsar_metadata.webUrlTls }}
+              --web-service-url-tls {{ .Values.pulsar_metadata.webUrlTls }} \
+              {{ else }}
               --web-service-url-tls https://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.https }}/ \
+              {{ end }}
+              {{ if eq .Values.pulsar_metadata.brokerUrl }}
+              --broker-service-url {{ .Values.pulsar_metadata.brokerUrl }} \
+              {{ else }}
               --broker-service-url pulsar://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.pulsar }}/ \
+              {{ end }}
+              {{ if eq .Values.pulsar_metadata.brokerUrlTls }}
+              --broker-service-url-tls {{ .Values.pulsar_metadata.brokerUrlTls }} \
+              {{ else }}
               --broker-service-url-tls pulsar+ssl://{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}.{{ template "pulsar.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.broker.ports.pulsarssl }}/ ;
+              {{ end }}
             {{- if .Values.extraInitCommand }}
               {{ .Values.extraInitCommand }}
             {{- end }}
