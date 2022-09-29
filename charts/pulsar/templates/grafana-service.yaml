@@ -18,6 +18,7 @@
 #
 
 {{- if or .Values.monitoring.grafana .Values.extra.monitoring }}
+{{- if .Values.grafana.service.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -44,5 +45,6 @@ spec:
 {{- if .Values.grafana.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
 {{ toYaml .Values.grafana.service.loadBalancerSourceRanges | indent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
