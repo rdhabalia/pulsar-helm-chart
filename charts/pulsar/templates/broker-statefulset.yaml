@@ -63,6 +63,26 @@ spec:
       tolerations:
 {{ toYaml .Values.broker.tolerations | indent 8 }}
     {{- end }}
+      topologySpreadConstraints:
+        {{- if and .Values.affinity.zone_spread .Values.broker.affinity.zone_spread}}
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchExpressions:
+            - key: "app"
+              operator: In
+              values:
+              - "{{ template "pulsar.name" . }}"
+            - key: "release"
+              operator: In
+              values:
+              - {{ .Release.Name }}
+            - key: "component"
+              operator: In
+              values:
+              - {{ .Values.broker.component }}
+        {{- end }}
       affinity:
         {{- if and .Values.affinity.anti_affinity .Values.broker.affinity.anti_affinity}}
         podAntiAffinity:

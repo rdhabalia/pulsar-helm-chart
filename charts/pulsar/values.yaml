@@ -105,6 +105,9 @@ affinity:
   # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
   # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
   type: requiredDuringSchedulingIgnoredDuringExecution
+  # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+  # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+  zone_spread: true
 
 ## Components
 ##
@@ -386,6 +389,9 @@ zookeeper:
     # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
     # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
     type: requiredDuringSchedulingIgnoredDuringExecution
+    # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+    # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+    zone_spread: true
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8000"
@@ -524,6 +530,9 @@ bookkeeper:
     # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
     # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
     type: requiredDuringSchedulingIgnoredDuringExecution
+    # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+    # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+    zone_spread: true
   annotations: {}
   tolerations: []
   gracePeriod: 30
@@ -679,6 +688,9 @@ autorecovery:
     # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
     # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
     type: requiredDuringSchedulingIgnoredDuringExecution
+    # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+    # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+    zone_spread: true
   annotations: {}
   # tolerations: []
   gracePeriod: 30
@@ -778,6 +790,9 @@ broker:
     # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
     # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
     type: preferredDuringSchedulingIgnoredDuringExecution
+    # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+    # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+    zone_spread: true
   annotations: {}
   tolerations: []
   gracePeriod: 30
@@ -899,6 +914,9 @@ adminproxy:
     # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
     # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
     type: preferredDuringSchedulingIgnoredDuringExecution
+    # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+    # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+    zone_spread: true
   annotations: {}
   tolerations: []
   gracePeriod: 30
@@ -999,6 +1017,9 @@ proxy:
     # requiredDuringSchedulingIgnoredDuringExecution - rules must be met for pod to be scheduled (hard) requires at least one node per replica
     # preferredDuringSchedulingIgnoredDuringExecution - scheduler will try to enforce but not guranentee
     type: requiredDuringSchedulingIgnoredDuringExecution
+    # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
+    # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
+    zone_spread: true
   annotations: {}
   tolerations: []
   gracePeriod: 30
@@ -1196,6 +1217,9 @@ trafficserver:
     type: LoadBalancer
     annotations: {}
   tolerations: []
+  affinity:
+    # Whether to also evenly spread pods across available zones
+    zone_spread: true
 
 #############################################################
 ### Monitoring Stack : Prometheus / Grafana
