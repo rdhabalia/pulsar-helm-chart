@@ -27,7 +27,7 @@ metadata:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.pulsar_manager.component }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.pulsar_manager.replicaCount }}
   selector:
     matchLabels:
       {{- include "pulsar.matchLabels" . | nindent 6 }}
@@ -52,6 +52,31 @@ spec:
 {{ toYaml .Values.pulsar_manager.tolerations | indent 8 }}
     {{- end }}
       terminationGracePeriodSeconds: {{ .Values.pulsar_manager.gracePeriod }}
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      serviceAccountName: "{{ .Values.pulsar_manager.service_account.name }}"
+      {{ end }}
+      {{ end }}
+      initContainers:
+      {{ if .Values.auth.authentication.enabled }}
+      {{ if eq .Values.auth.authentication.provider "athenz" }}
+        ## sia init container
+        - name: init-sia
+          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+          command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+          resources:
+            requests:
+              memory: 50M
+              cpu: 10m
+          volumeMounts:
+            - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+      {{ end }}
+      {{ end }}
       containers:
         - name: "{{ template "pulsar.fullname" . }}-{{ .Values.pulsar_manager.component }}"
           image: "{{ .Values.images.pulsar_manager.repository }}:{{ .Values.images.pulsar_manager.tag }}"
@@ -65,6 +90,12 @@ spec:
           volumeMounts:
           - name: pulsar-manager-data
             mountPath: /data
+          {{- if .Values.auth.authentication.enabled }}
+            {{ if eq .Values.auth.authentication.provider "athenz" }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            {{ end }}
+          {{- end }}
           envFrom:
           - configMapRef:
               name: "{{ template "pulsar.fullname" . }}-{{ .Values.pulsar_manager.component }}"
@@ -92,8 +123,39 @@ spec:
           - name: PULSAR_MANAGER_OPTS
             value: "$(PULSAR_MANAGER_OPTS) -Dlog4j2.formatMsgNoLookups=true"
         {{- include "pulsar.imagePullSecrets" . | nindent 6}}
+        {{ if .Values.auth.authentication.enabled }}
+        {{ if eq .Values.auth.authentication.provider "athenz" }}
+        - name: sia
+          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+          resources:
+            requests:
+              memory: 50M
+              cpu: 10m
+          volumeMounts:
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
+              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
+              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+          {{ end }}
+          {{ end }}
       volumes:
         - name: pulsar-manager-data
           emptyDir: {}
-
+        {{ if .Values.auth.authentication.enabled }}
+        {{ if eq .Values.auth.authentication.provider "athenz" }}
+        - name: sia-volume
+          emptyDir:
+            medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
+        - name: sia
+          configMap:
+            name: "{{ .Values.pulsar_manager.service_account.configmap }}"
+            items:
+              - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
+                path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
+        {{ end }}
+        {{ end }}
 {{- end }}
