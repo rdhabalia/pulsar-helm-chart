@@ -4,11 +4,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ template "pulsar.namespace" $ }}-pulsar-zookeeper-{{ $i }}"
+  name: "{{ template "pulsar.fullname" $ }}-zookeeper-{{ $i }}"
   labels:
-    app: "{{ template "pulsar.namespace" $ }}-pulsar-zookeeper-{{ $i }}"
+    app: "{{ template "pulsar.fullname" $ }}-zookeeper-{{ $i }}"
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-name: {{ template "pulsar.namespace" $ }}-pulsar-zookeeper-{{ $i }}
+    service.beta.kubernetes.io/aws-load-balancer-name: {{ template "pulsar.fullname" $ }}-zookeeper-{{ $i }}
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
     service.beta.kubernetes.io/aws-load-balancer-scheme: internal
@@ -19,13 +19,13 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "10"
     service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
     service.beta.kubernetes.io/aws-load-balancer-target-node-labels: nodegroup=application-zookeeper
-    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "App={{ template "pulsar.namespace" $ }}-pulsar-zookeeper-{{ $i }}"
+    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "App={{ template "pulsar.fullname" $ }}-zookeeper-{{ $i }}"
     service.beta.kubernetes.io/load-balancer-source-ranges: {{ $.Values.zookeeper.configData.SUBNETS }}
-    external-dns.alpha.kubernetes.io/hostname: 	{{ template "pulsar.namespace" $ }}-pulsar-zookeeper-{{ $i }}.{{ $.Values.zookeeper.configData.ROUTE53_HOSTED_ZONE }}
+    external-dns.alpha.kubernetes.io/hostname: 	{{ template "pulsar.fullname" $ }}-zookeeper-{{ $i }}.{{ $.Values.zookeeper.configData.ROUTE53_HOSTED_ZONE }}
 spec:
   type: LoadBalancer
   selector:
-    statefulset.kubernetes.io/pod-name: {{ template "pulsar.namespace" $ }}-pulsar-zookeeper-{{ $i }}
+    statefulset.kubernetes.io/pod-name: {{ template "pulsar.fullname" $ }}-zookeeper-{{ $i }}
   ports:
     - name:  "{{ $.Values.tcpPrefix }}follower"
       port: {{ $.Values.zookeeper.ports.follower }}
