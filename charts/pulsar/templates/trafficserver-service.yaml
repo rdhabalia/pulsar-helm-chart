@@ -40,6 +40,10 @@ spec:
   selector:
     {{- include "pulsar.matchLabels" . | nindent 4 }}
     component: {{ .Values.trafficserver.component }}
+  {{- if .Values.trafficserver.service.sourceranges }}
+  loadBalancerSourceRanges:
+{{ toYaml .Values.trafficserver.service.sourceranges | indent 4 }}
+  {{- end}}
 {{- end }}
 ---
 {{- if and .Values.components.trafficserver .Values.trafficserver.privatelink.enabled }}
