@@ -283,6 +283,8 @@ spec:
         {{ end }}
         - name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.data.name }}"
           mountPath: /pulsar/data
+        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.logs.name }}"
+          mountPath: /pulsar/logs
         {{- if and .Values.tls.enabled .Values.tls.zookeeper.enabled }}
         - mountPath: "/pulsar/certs/zookeeper"
           name: zookeeper-certs
@@ -348,6 +350,20 @@ spec:
       {{- end}}
 {{- if and (and .Values.persistence .Values.volumes.persistence) .Values.zookeeper.volumes.persistence }}
   volumeClaimTemplates:
+  - metadata:
+      name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.logs.name }}"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.zookeeper.volumes.logs.size }}
+    {{- if .Values.zookeeper.volumes.logs.storageClassName }}
+      storageClassName: "{{ .Values.zookeeper.volumes.logs.storageClassName }}"
+    {{- else if and (not (and .Values.volumes.local_storage .Values.zookeeper.volumes.logs.local_storage)) .Values.zookeeper.volumes.data.storageClass }}
+      storageClassName: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.logs.name }}"
+    {{- else if and .Values.volumes.local_storage .Values.zookeeper.volumes.logs.local_storage }}
+      storageClassName: "local-storage"
+    {{- end }}
   - metadata:
       name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.data.name }}"
     spec:
