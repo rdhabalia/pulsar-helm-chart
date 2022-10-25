@@ -393,6 +393,10 @@ spec:
             - mountPath: /metrics-data
               name: metrics-volume
           {{- end }}
+          {{- if .Values.broker.volumes.persistence }}
+            - mountPath: /pulsar/logs
+              name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-{{ .Values.broker.volumes.logs.name }}"
+          {{- end }}
           {{- if .Values.broker.extraVolumeMounts }}
 {{ toYaml .Values.broker.extraVolumeMounts | indent 10 }}
           {{- end }}
@@ -453,4 +457,21 @@ spec:
       {{- end }}
       {{- include "pulsar.broker.certs.volumes" . | nindent 6 }}
       {{- include "pulsar.imagePullSecrets" . | nindent 6}}
+{{- if and (and .Values.persistence .Values.volumes.persistence) .Values.broker.volumes.persistence }}
+  volumeClaimTemplates:
+  - metadata:
+      name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-{{ .Values.broker.volumes.logs.name }}"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.broker.volumes.logs.size }}
+    {{- if .Values.broker.volumes.logs.storageClassName }}
+      storageClassName: "{{ .Values.broker.volumes.logs.storageClassName }}"
+    {{- else if and (not (and .Values.volumes.local_storage .Values.broker.volumes.logs.local_storage)) .Values.broker.volumes.logs.storageClass }}
+      storageClassName: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-{{ .Values.broker.volumes.logs.name }}"
+    {{- else if and .Values.volumes.local_storage .Values.broker.volumes.logs.local_storage }}
+      storageClassName: "local-storage"
+    {{- end }}
+{{- end }}
 {{- end }}

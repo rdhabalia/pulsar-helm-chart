@@ -561,6 +561,11 @@ bookkeeper:
   volumes:
     # use a persistent volume or emptyDir
     persistence: true
+    logs:
+      name: logs
+      size: 100Gi
+      local_storage: true
+      mountPath: /pulsar/logs
     journal:
       name: journal
       size: 10Gi
@@ -603,16 +608,6 @@ bookkeeper:
           size: 10Gi
           # storageClassName: existent-storage-class
           mountPath: /pulsar/data/bookkeeper/ledgers1
-    logs:
-      name: logs
-      size: 100Gi
-      local_storage: true
-      useMultiVolumes: false
-      multiVolumes:
-        - name: logs
-          size: 100Gi
-          mountPath: /pulsar/logs
-
     ## use a single common volume for both journal and ledgers
     useSingleCommonVolume: false
     common:
@@ -827,6 +822,14 @@ broker:
   #     readOnly: true
   extraVolumes: []
   extraVolumeMounts: []
+  volumes:
+    # use a persistent volume or emptyDir
+    persistence: true
+    logs:
+      name: logs
+      size: 100Gi
+      local_storage: true
+      mountPath: /pulsar/logs
   ## Broker configmap
   ## templates/broker-configmap.yaml
   ##
