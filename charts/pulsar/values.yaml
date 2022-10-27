@@ -1196,6 +1196,8 @@ toolset:
       -XX:MaxDirectMemorySize=128M
   ## Add a custom command to the start up process of the toolset pods (e.g. update-ca-certificates, jvm commands, etc)
   additionalCommand:
+  service_account:
+    name: "replace"
 
 ## Pulsar: Trafficserver
 ## templates/trafficserver-deployment.yaml
