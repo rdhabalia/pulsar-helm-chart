@@ -86,6 +86,11 @@ spec:
           image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
           imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
           command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+               - NET_RAW
           resources:
             requests:
               memory: 50M
@@ -103,6 +108,10 @@ spec:
           image: "{{ .Values.images.trafficserver.repository }}:{{ .Values.images.trafficserver.tag }}"
           imagePullPolicy: {{ .Values.images.trafficserver.pullPolicy }}
           command: ["/scripts/wrapper.sh"]
+          securityContext:
+            capabilities:
+              drop:
+               - NET_RAW
         {{- if .Values.trafficserver.resources }}
           resources:
 {{ toYaml .Values.trafficserver.resources | indent 12 }}
@@ -121,6 +130,11 @@ spec:
         - name: sia
           image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
           imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+               - NET_RAW
           resources:
             requests:
               memory: 50M

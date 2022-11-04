@@ -58,6 +58,11 @@ spec:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.grafana.component }}"
         image: "{{ .Values.images.grafana.repository }}:{{ .Values.images.grafana.tag }}"
         imagePullPolicy: {{ .Values.images.grafana.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
       {{- if .Values.grafana.resources }}
         resources:
 {{ toYaml .Values.grafana.resources | indent 10 }}

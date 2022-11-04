@@ -53,6 +53,11 @@ spec:
               sleep 3;
             done;
             {{- end}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
       containers:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-init"
         image: "{{ .Values.images.bookie.repository }}:{{ .Values.images.bookie.tag }}"
@@ -77,10 +82,14 @@ spec:
             {{- if .Values.extraInitCommand }}
               {{ .Values.extraInitCommand }}
             {{- end }}
-      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
-      {{- end }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"

@@ -144,6 +144,11 @@ spec:
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         resources:
           requests:
             memory: 50M
@@ -168,6 +173,11 @@ spec:
         envFrom:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         volumeMounts:
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
       containers:
@@ -176,6 +186,11 @@ spec:
       - name: sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         resources:
           requests:
             memory: 50M
@@ -197,10 +212,14 @@ spec:
         resources:
 {{ toYaml .Values.autorecovery.resources | indent 10 }}
       {{- end }}
-      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
-      {{- end}}
+        {{- end}}
         command: ["sh", "-c"]
         args:
         - >

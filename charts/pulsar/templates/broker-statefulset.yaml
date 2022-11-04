@@ -140,6 +140,11 @@ spec:
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         resources:
           requests:
             memory: 50M
@@ -154,6 +159,11 @@ spec:
       - name: init-cameo
         image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
         imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
             value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem
@@ -198,10 +208,14 @@ spec:
             {{- end }}
               echo "pulsar cluster {{ template "pulsar.cluster.name" . }} isn't initialized yet ... check in 3 seconds ..." && sleep 3;
             done;
-      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
-      {{- end }}
+        {{- end }}
         volumeMounts:
         {{- include "pulsar.broker.certs.volumeMounts" . | nindent 8 }}
       # This init container will wait for bookkeeper to be ready before
@@ -230,10 +244,14 @@ spec:
         envFrom:
           - configMapRef:
               name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
-      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
-      {{- end }}
+        {{- end }}
         volumeMounts:
         {{- include "pulsar.broker.certs.volumeMounts" . | nindent 10 }}
       containers:
@@ -242,6 +260,11 @@ spec:
       - name: sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         resources:
           requests:
             memory: 50M
@@ -257,6 +280,11 @@ spec:
       - name: cameo
         image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
         imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
             value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem
@@ -401,10 +429,14 @@ spec:
 {{ toYaml .Values.broker.extraVolumeMounts | indent 10 }}
           {{- end }}
           {{- include "pulsar.broker.certs.volumeMounts" . | nindent 10 }}
-      {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
-      {{- end }}
+        {{- end }}
       volumes:
       {{ if .Values.auth.authentication.enabled }}
       {{ if eq .Values.auth.authentication.provider "athenz" }}

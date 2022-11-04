@@ -53,6 +53,11 @@ spec:
       containers:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.dashboard.component }}"
         image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
       {{- if .Values.dashboard.resources }}
         resources:

@@ -137,6 +137,11 @@ spec:
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         resources:
           requests:
             memory: 50M
@@ -155,6 +160,11 @@ spec:
       - name: sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         resources:
           requests:
             memory: 50M
@@ -228,11 +238,15 @@ spec:
         {{- $zkConnectCommand = print "nc localhost " .Values.zookeeper.ports.client -}}
 
         {{- end }}
-        {{- if .Values.zookeeper.probe.readiness.enabled }}
-        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+          {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
-        {{- end}}
+          {{- end}}
+        {{- if .Values.zookeeper.probe.readiness.enabled }}
         readinessProbe:
           exec:
             command:

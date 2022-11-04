@@ -47,6 +47,11 @@ spec:
               sleep 3;
             done;
 
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
       {{- end }}
       - name: wait-zookeeper-ready
         image: "{{ .Values.pulsar_metadata.image.repository }}:{{ .Values.pulsar_metadata.image.tag }}"
@@ -63,6 +68,11 @@ spec:
               sleep 3;
             done;
             {{- end}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before initializing pulsar metadata
       - name: pulsar-bookkeeper-verify-clusterid
@@ -79,6 +89,11 @@ spec:
         envFrom:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         volumeMounts:
         {{- include "pulsar.toolset.certs.volumeMounts" . | nindent 8 }}
       containers:
@@ -131,6 +146,11 @@ spec:
             {{- if .Values.extraInitCommand }}
               {{ .Values.extraInitCommand }}
             {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
         volumeMounts:
         {{- include "pulsar.toolset.certs.volumeMounts" . | nindent 8 }}
       volumes:
