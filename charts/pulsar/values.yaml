@@ -883,6 +883,7 @@ adminproxy:
   # so the metrics are correctly rendered in grafana dashboard
   component: adminproxy
   replicaCount: 3
+  alwaysRestart: false
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -1208,6 +1209,7 @@ trafficserver:
   component: trafficserver
   replicaCount: 1
   restartPodsOnConfigMapChange: false
+  alwaysRestart: false
   annotations: {}
   tolerations: []
   resources:

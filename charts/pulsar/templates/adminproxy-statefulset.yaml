@@ -48,6 +48,9 @@ spec:
         {{- if .Values.adminproxy.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/adminproxy-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.adminproxy.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{- with .Values.adminproxy.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}

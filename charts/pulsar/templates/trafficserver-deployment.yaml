@@ -41,6 +41,9 @@ spec:
         {{- if .Values.trafficserver.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/trafficserver-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.trafficserver.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{ toYaml .Values.trafficserver.annotations | indent 8 }}
     spec:
     {{- if .Values.trafficserver.nodeSelector }}
