@@ -1210,7 +1210,6 @@ trafficserver:
   replicaCount: 1
   restartPodsOnConfigMapChange: false
   alwaysRestart: false
-  annotations: {}
   tolerations: []
   resources:
     limits:

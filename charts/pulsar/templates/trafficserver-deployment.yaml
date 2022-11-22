@@ -44,7 +44,9 @@ spec:
         {{- if .Values.trafficserver.alwaysRestart }}
         rollme: {{ randAlphaNum 5 | quote }}
         {{- end }}
-{{ toYaml .Values.trafficserver.annotations | indent 8 }}
+{{- with .Values.trafficserver.annotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
     spec:
     {{- if .Values.trafficserver.nodeSelector }}
       nodeSelector:

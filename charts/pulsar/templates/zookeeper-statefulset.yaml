@@ -50,7 +50,9 @@ spec:
         {{- if .Values.zookeeper.alwaysRestart }}
         rollme: {{ randAlphaNum 5 | quote }}
         {{- end }}
-{{ toYaml .Values.zookeeper.annotations | indent 8 }}
+{{- with .Values.zookeeper.annotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
     spec:
     {{- if .Values.zookeeper.nodeSelector }}
       nodeSelector:
