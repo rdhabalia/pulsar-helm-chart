@@ -1256,6 +1256,7 @@ prometheus:
   rbac:
     enabled: true
   replicaCount: 1
+  alwaysRestart: false
   # True includes annotation for statefulset that contains hash of corresponding configmap, which will cause pods to restart on configmap change
   restartPodsOnConfigMapChange: false
   # nodeSelector:

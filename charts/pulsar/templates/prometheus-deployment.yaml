@@ -41,6 +41,9 @@ spec:
         {{- if .Values.prometheus.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/prometheus-configmap.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.prometheus.alwaysRestart }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
 {{- with .Values.prometheus.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}
