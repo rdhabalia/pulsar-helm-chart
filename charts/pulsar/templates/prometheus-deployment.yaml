@@ -41,7 +41,9 @@ spec:
         {{- if .Values.prometheus.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/prometheus-configmap.yaml") . | sha256sum }}
         {{- end }}
-{{ toYaml .Values.prometheus.annotations | indent 8 }}
+{{- with .Values.prometheus.annotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
     spec:
     {{- if .Values.prometheus.nodeSelector }}
       nodeSelector:
