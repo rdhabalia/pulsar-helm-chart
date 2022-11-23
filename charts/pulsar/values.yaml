@@ -1256,6 +1256,8 @@ prometheus:
   rbac:
     enabled: true
   replicaCount: 1
+  strategy:
+    type: Recreate
   alwaysRestart: false
   # True includes annotation for statefulset that contains hash of corresponding configmap, which will cause pods to restart on configmap change
   restartPodsOnConfigMapChange: false
@@ -1263,6 +1265,10 @@ prometheus:
     # cloud.google.com/gke-nodepool: default-pool
   annotations: {}
   tolerations: []
+  remote_write:
+    url: ""
+    username: ""
+    password: ""
   gracePeriod: 5
   port: 9090
   enableAdminApi: false
