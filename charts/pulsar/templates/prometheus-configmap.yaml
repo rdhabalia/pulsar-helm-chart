@@ -32,16 +32,23 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 15s
+    {{- if .Values.prometheus.remote_write.url }}
     remote_write:
     - url: {{ .Values.prometheus.remote_write.url }}
       basic_auth:
         username: {{ .Values.prometheus.remote_write.username }}
         password: {{ .Values.prometheus.remote_write.password }}
+    {{- end }}
     scrape_configs:
     - job_name: 'prometheus'
       static_configs:
       - targets: ['localhost:9090']
     - job_name: 'kubernetes-pods'
+      {{- if .Values.prometheus.https_scraper }}
+      scheme: https
+      tls_config:
+        insecure_skip_verify: true
+      {{- end }}
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:

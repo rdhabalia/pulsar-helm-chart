@@ -44,7 +44,12 @@ spec:
         component: {{ .Values.broker.component }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.broker.ports.http }}"
+        prometheus.io/port: "
+        {{- if .Values.prometheus.https_scraper }}
+          {{- .Values.broker.ports.https }}
+        {{- else }}
+          {{- .Values.broker.ports.http }}
+        {{- end }}"
         {{- if .Values.broker.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/broker-configmap.yaml") . | sha256sum }}
         {{- end }}

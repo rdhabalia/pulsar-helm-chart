@@ -44,6 +44,13 @@ spec:
         {{- include "pulsar.template.labels" . | nindent 8 }}
         component: {{ .Values.zookeeper.component }}
       annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "
+        {{- if .Values.prometheus.https_scraper }}
+          {{- .Values.zookeeper.ports.https }}
+        {{- else }}
+          {{- .Values.zookeeper.ports.http }}
+        {{- end }}"
         {{- if .Values.zookeeper.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/zookeeper-configmap.yaml") . | sha256sum }}
         {{- end }}
@@ -180,6 +187,29 @@ spec:
             mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
             subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
       {{ end }}
+      {{ end }}
+      {{ if .Values.prometheus.https_scraper }}
+      - name: stunnel
+        image: "{{ .Values.images.stunnel.repository }}:{{ .Values.images.stunnel.tag }}"
+        imagePullPolicy: {{ .Values.images.stunnel.pullPolicy }}
+        args: ["{{ .Values.zookeeper.ports.https }}", "{{ .Values.zookeeper.ports.http }}", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/ca.cert.pem"]
+        ports:
+        # prometheus needs to access /metrics endpoint
+        - name: https
+          containerPort: {{ .Values.zookeeper.ports.https }}
+        securityContext:
+          runAsUser: 65534
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
       {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}"
         image: "{{ .Values.images.zookeeper.repository }}:{{ .Values.images.zookeeper.tag }}"

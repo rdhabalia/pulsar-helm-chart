@@ -44,7 +44,12 @@ spec:
         component: {{ .Values.bookkeeper.component }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.bookkeeper.ports.http }}"
+        prometheus.io/port: "
+        {{- if .Values.prometheus.https_scraper }}
+          {{- .Values.bookkeeper.ports.https }}
+        {{- else }}
+          {{- .Values.bookkeeper.ports.http }}
+        {{- end }}"
         {{- if .Values.bookkeeper.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/bookkeeper-configmap.yaml") . | sha256sum }}
         {{- end }}
@@ -204,6 +209,29 @@ spec:
             mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
             subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
       {{ end }}
+      {{ end }}
+      {{ if .Values.prometheus.https_scraper }}
+      - name: stunnel
+        image: "{{ .Values.images.stunnel.repository }}:{{ .Values.images.stunnel.tag }}"
+        imagePullPolicy: {{ .Values.images.stunnel.pullPolicy }}
+        args: ["{{ .Values.bookkeeper.ports.https }}", "{{ .Values.bookkeeper.ports.http }}", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/ca.cert.pem"]
+        ports:
+        # prometheus needs to access /metrics endpoint
+        - name: https
+          containerPort: {{ .Values.bookkeeper.ports.https }}
+        securityContext:
+          runAsUser: 65534
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
       {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
         image: "{{ .Values.images.bookie.repository }}:{{ .Values.images.bookie.tag }}"

@@ -212,6 +212,10 @@ images:
     repository: docker.ouroath.com:4443/cms/trafficserver-base
     tag: latest
     pullPolicy: Always
+  stunnel:
+    repository: docker.ouroath.com:4443/cms/stunnel
+    tag: latest
+    pullPolicy: Always
 
 ## TLS
 ## templates/tls-certs.yaml
@@ -356,6 +360,7 @@ zookeeper:
   restartPodsOnConfigMapChange: false
   ports:
     http: 8000
+    https: 8443
     client: 2181
     clientTls: 2281
     follower: 2888
@@ -392,9 +397,6 @@ zookeeper:
     # Whether to also evenly spread pods across available zones. This is independent of anti_affinity.
     # With anti_affinity:false, multiple pods can end up on one node, but the pods will still be evenly distributed across zones.
     zone_spread: true
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8000"
   tolerations: []
   gracePeriod: 30
   resources:
@@ -504,6 +506,7 @@ bookkeeper:
   restartPodsOnConfigMapChange: false
   ports:
     http: 8000
+    https: 8443
     bookie: 3181
     healthcheck: 5000
   # nodeSelector:
@@ -689,6 +692,7 @@ autorecovery:
   restartPodsOnConfigMapChange: false
   ports:
     http: 8000
+    https: 8443
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   affinity:
@@ -1252,6 +1256,7 @@ trafficserver:
 ## Deprecated in favor of using `prometheus.rbac.enabled`
 prometheus_rbac: false
 prometheus:
+  https_scraper: false
   component: prometheus
   rbac:
     enabled: true

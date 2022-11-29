@@ -44,7 +44,12 @@ spec:
         component: {{ .Values.adminproxy.component }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.adminproxy.ports.http }}"
+        prometheus.io/port: "
+        {{- if .Values.prometheus.https_scraper }}
+          {{- .Values.adminproxy.ports.https }}
+        {{- else }}
+          {{- .Values.adminproxy.ports.http }}
+        {{- end }}"
         {{- if .Values.adminproxy.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/adminproxy-configmap.yaml") . | sha256sum }}
         {{- end }}

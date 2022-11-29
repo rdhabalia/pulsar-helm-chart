@@ -44,7 +44,12 @@ spec:
         component: {{ .Values.autorecovery.component }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.autorecovery.ports.http }}"
+        prometheus.io/port: "
+        {{- if .Values.prometheus.https_scraper }}
+          {{- .Values.autorecovery.ports.https }}
+        {{- else }}
+          {{- .Values.autorecovery.ports.http }}
+        {{- end }}"
         {{- if .Values.autorecovery.restartPodsOnConfigMapChange }}
         checksum/config: {{ include (print $.Template.BasePath "/autorecovery-configmap.yaml") . | sha256sum }}
         {{- end }}
@@ -205,6 +210,29 @@ spec:
             subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
         {{ end }}
         {{ end }}
+      {{ if .Values.prometheus.https_scraper }}
+      - name: stunnel
+        image: "{{ .Values.images.stunnel.repository }}:{{ .Values.images.stunnel.tag }}"
+        imagePullPolicy: {{ .Values.images.stunnel.pullPolicy }}
+        args: ["{{ .Values.autorecovery.ports.https }}", "{{ .Values.autorecovery.ports.http }}", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/ca.cert.pem"]
+        ports:
+        # prometheus needs to access /metrics endpoint
+        - name: https
+          containerPort: {{ .Values.autorecovery.ports.https }}
+        securityContext:
+          runAsUser: 65534
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        resources:
+          requests:
+            memory: 50M
+            cpu: 10m
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+      {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         image: "{{ .Values.images.autorecovery.repository }}:{{ .Values.images.autorecovery.tag }}"
         imagePullPolicy: {{ .Values.images.autorecovery.pullPolicy }}
