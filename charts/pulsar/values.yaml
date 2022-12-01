@@ -1215,6 +1215,9 @@ trafficserver:
   restartPodsOnConfigMapChange: false
   alwaysRestart: false
   tolerations: []
+  sni_routes: []
+  # - fqdn: servername.here
+  #   tunnel_route: remote.sniproxy.here:6651
   resources:
     limits:
       cpu: "1"

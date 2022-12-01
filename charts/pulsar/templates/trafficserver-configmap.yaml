@@ -177,6 +177,10 @@ data:
                 svcs.append(f"{s['metadata']['name']}-{s['metadata']['namespace']}.{{ .Values.trafficserver.r53domain }}") # this is for the single wildcard SAN
             with open('/var/tmp/sni.yaml', 'w') as conf:
                 print('sni:', file=conf)
+                {{- range .Values.trafficserver.sni_routes }}
+                print(f"- fqdn: {{ .fqdn }}", file=conf)
+                print(f"  tunnel_route: {{ .tunnel_route }}", file=conf)
+                {{- end }}
                 for n in sorted(pods+svcs):
                     print(f"- fqdn: {n}", file=conf)
                     print(f"  tunnel_route: {n}:{{ .Values.trafficserver.ports.pulsarssl }}", file=conf)
