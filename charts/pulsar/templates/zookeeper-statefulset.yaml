@@ -45,6 +45,9 @@ spec:
         component: {{ .Values.zookeeper.component }}
       annotations:
         prometheus.io/scrape: "true"
+        {{- if .Values.prometheus.https_scraper }}
+        prometheus.io/scheme: "https"
+        {{- end }}
         prometheus.io/port: "
         {{- if .Values.prometheus.https_scraper }}
           {{- .Values.zookeeper.ports.https }}
