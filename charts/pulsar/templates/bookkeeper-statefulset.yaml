@@ -312,8 +312,10 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
         volumeMounts:
+        {{ if .Values.bookkeeper.volumes.logs2ebs }}
         - mountPath: /pulsar/logs
           name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.logs.name }}"
+        {{ end }}
         {{- if .Values.bookkeeper.volumes.useSingleCommonVolume }}
           - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.common.name }}"
             mountPath: /pulsar/data/bookkeeper
@@ -386,6 +388,7 @@ spec:
       {{- end }}
 {{- if and (and .Values.persistence .Values.volumes.persistence) .Values.bookkeeper.volumes.persistence}}
   volumeClaimTemplates:
+  {{ if .Values.bookkeeper.volumes.logs2ebs }}
   - metadata:
       name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.logs.name }}"
     spec:
@@ -400,6 +403,7 @@ spec:
     {{- else if and .Values.volumes.local_storage .Values.bookkeeper.volumes.logs.local_storage }}
       storageClassName: "local-storage"
     {{- end }}
+  {{ end }}
   {{- if .Values.bookkeeper.volumes.useSingleCommonVolume }}
     - metadata:
         name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.common.name }}"
