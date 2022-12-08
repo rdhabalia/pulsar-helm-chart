@@ -32,6 +32,7 @@ metadata:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.bookkeeper.component }}
 provisioner: {{ .Values.bookkeeper.volumes.common.storageClass.provisioner }}
+allowVolumeExpansion: true
 parameters:
   type: {{ .Values.bookkeeper.volumes.common.storageClass.type }}
   fsType: {{ .Values.bookkeeper.volumes.common.storageClass.fsType }}

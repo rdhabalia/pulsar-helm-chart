@@ -32,6 +32,7 @@ metadata:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.zookeeper.component }}
 provisioner: {{ .Values.zookeeper.volumes.data.storageClass.provisioner }}
+allowVolumeExpansion: true
 volumeBindingMode: {{ .Values.zookeeper.volumes.data.storageClass.volumeBindingMode }}
 reclaimPolicy: {{ .Values.zookeeper.volumes.data.storageClass.reclaimPolicy }}
 parameters:
