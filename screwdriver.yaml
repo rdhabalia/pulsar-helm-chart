@@ -1,4 +1,11 @@
 jobs:
+  semgrep:
+    requires:
+      - ~pr
+      - ~commit
+    environment:
+      YAHOO_SEMGREP_ENFORCING: true
+    template: python-2204/validate_semgrep
   pulsar-helm:
     requires: [~pr, ~commit]
     image: docker.ouroath.com:4443/gap-tools:latest
