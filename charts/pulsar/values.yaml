@@ -133,7 +133,8 @@ components:
   pulsar_manager: false
   # apache traffic server - SNI proxy
   trafficserver: false
-
+  # cloudwatch logs
+  logs: false
 ## Monitoring Components
 ##
 ## Control what components of the monitoring stack to deploy for the cluster
@@ -213,6 +214,10 @@ images:
     tag: latest
     pullPolicy: Always
   stunnel:
+    repository: docker.ouroath.com:4443/cms/stunnel
+    tag: latest
+    pullPolicy: Always
+  logs:
     repository: docker.ouroath.com:4443/cms/stunnel
     tag: latest
     pullPolicy: Always
@@ -1439,3 +1444,21 @@ job:
   ttl:
     enabled: false
     secondsAfterFinished: 3600
+
+logs:
+  component: logs
+  service_account:
+    name: logs-acct
+    annotations: "arn:aws:iam::acnntid:role/irsa-name-acct"
+  nodeSelector: {}
+  tolerations: {}
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 500Mi
+    requests:
+      cpu: 1000m
+      memory: 500Mi
+  volumeMounts: {}
+  volumes: {}
+  configData: {}

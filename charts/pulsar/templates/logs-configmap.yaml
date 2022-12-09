@@ -1,0 +1,13 @@
+{{- if .Values.components.logs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+    component: {{ .Values.logs.component }}
+data:
+  logs.conf: |
+{{ toYaml .Values.logs.configData | indent 4 }}
+{{- end }}

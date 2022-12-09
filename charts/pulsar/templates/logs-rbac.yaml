@@ -1,0 +1,30 @@
+{{- if .Values.components.logs }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - pods
+      - pods/logs
+      - nodes
+      - nodes/proxy
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}-acct"
+    namespace: {{ template "pulsar.namespace" . }}
+{{- end }}

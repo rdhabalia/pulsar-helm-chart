@@ -1,0 +1,57 @@
+{{- if .Values.components.logs }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
+  namespace: {{ template "pulsar.namespace" . }}
+  labels:
+    {{- include "pulsar.standardLabels" . | nindent 4 }}
+    component: {{ .Values.logs.component }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "pulsar.standardLabels" . | nindent 4 }}
+      component: {{ .Values.logs.component }}
+  template:
+    metadata:
+      labels:
+        {{- include "pulsar.template.labels" . | nindent 8 }}
+        component: {{ .Values.logs.component }}
+    spec:
+    {{- if .Values.logs.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.logs.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.logs.tolerations }}
+      tolerations:
+{{ toYaml .Values.logs.tolerations | indent 8 }}
+    {{- end }}
+      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}-acct"
+      containers:
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
+        image: "{{ .Values.images.logs.repository }}/{{ .Values.images.logs.tag }}"
+        imagePullPolicy: {{ .Values.images.logs.pullPolicy }}
+        env:
+          - name: HOST_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+      {{- if .Values.logs.resources }}
+        resources:
+{{ toYaml .Values.logs.resources | indent 10 }}
+      {{- end }}
+      {{- if .Values.logs.volumeMounts }}
+        volumeMounts:
+{{ toYaml .Values.logs.volumeMounts | indent 10 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 10
+    {{- if .Values.logs.volumes }}
+      volumes:
+{{ toYaml .Values.logs.volumes | indent 8 }}
+    {{- end }}
+{{- end }}
