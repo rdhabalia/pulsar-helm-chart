@@ -25,6 +25,12 @@ roleRef:
   name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}"
 subjects:
   - kind: ServiceAccount
+    {{ if .Values.auth.authentication.enabled }}
+    {{ if eq .Values.auth.authentication.provider "athenz" }}
+    name: "{{ .Values.logs.service_account.name }}"
+    {{ end }}
+    {{ else }}
     name: "{{ template "pulsar.fullname" . }}-{{ .Values.logs.component }}-acct"
+    {{ end }}
     namespace: {{ template "pulsar.namespace" . }}
 {{- end }}

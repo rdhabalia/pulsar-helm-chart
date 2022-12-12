@@ -8,6 +8,5 @@ metadata:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.logs.component }}
 data:
-  logs.conf: |
-{{ toYaml .Values.logs.configData | indent 4 }}
+{{ toYaml .Values.logs.configData | indent 2 }}
 {{- end }}

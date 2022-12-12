@@ -1452,6 +1452,10 @@ logs:
     annotations: "arn:aws:iam::acnntid:role/irsa-name-acct"
   nodeSelector: {}
   tolerations: {}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   resources:
     limits:
       cpu: 1000m
