@@ -123,6 +123,12 @@ spec:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}"
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
       {{- if .Values.toolset.resources }}
         resources:
 {{ toYaml .Values.toolset.resources | indent 10 }}
@@ -149,6 +155,9 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}"
         volumeMounts:
+        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}-{{ .Values.toolset.volumes.logs.name }}"
+          mountPath: {{ .Values.toolset.volumes.logs.mountPath }}
+          subPathExpr: $(POD_NAME)
         {{- if .Values.auth.authentication.enabled }}
         {{- if eq .Values.auth.authentication.provider "jwt" }}
         - mountPath: "/pulsar/tokens"
@@ -172,6 +181,12 @@ spec:
         {{- end }}
         {{- end }}
       volumes:
+      {{ if not .Values.toolset.volumes.logs2ebs }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}-{{ .Values.toolset.volumes.logs.name }}"
+        hostPath:
+          path: {{ .Values.toolset.volumes.logs.mountPath }}
+          type: {{ .Values.toolset.volumes.logs.type }}
+      {{ end }}
       {{ if .Values.auth.authentication.enabled }}
       {{ if eq .Values.auth.authentication.provider "athenz" }}
       - name: tls-certs

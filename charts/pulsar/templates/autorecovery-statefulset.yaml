@@ -239,6 +239,12 @@ spec:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         image: "{{ .Values.images.autorecovery.repository }}:{{ .Values.images.autorecovery.tag }}"
         imagePullPolicy: {{ .Values.images.autorecovery.pullPolicy }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
       {{- if .Values.autorecovery.resources }}
         resources:
 {{ toYaml .Values.autorecovery.resources | indent 10 }}
@@ -267,6 +273,9 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         volumeMounts:
+          - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}-{{ .Values.autorecovery.volumes.logs.name }}"
+            mountPath: {{ .Values.autorecovery.volumes.logs.mountPath }}
+            subPathExpr: $(POD_NAME)
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
         {{- if .Values.auth.authentication.enabled }}
         {{- if eq .Values.auth.authentication.provider "athenz" }}
@@ -279,6 +288,12 @@ spec:
             name: metrics-volume
         {{ end }}
       volumes:
+      {{ if not .Values.autorecovery.volumes.logs2ebs }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}-{{ .Values.autorecovery.volumes.logs.name }}"
+        hostPath:
+          path: {{ .Values.autorecovery.volumes.logs.mountPath }}
+          type: {{ .Values.autorecovery.volumes.logs.type }}
+      {{ end }}
       {{- include "pulsar.autorecovery.certs.volumes" . | nindent 6 }}
       {{- include "pulsar.imagePullSecrets" . | nindent 6}}
       {{ if .Values.auth.authentication.enabled }}

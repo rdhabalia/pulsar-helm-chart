@@ -321,6 +321,12 @@ spec:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}"
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         {{- if .Values.broker.probe.liveness.enabled }}
         livenessProbe:
           httpGet:
@@ -409,6 +415,9 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}"
         volumeMounts:
+            - name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-{{ .Values.broker.volumes.logs.name }}"
+              mountPath: {{ .Values.broker.volumes.logs.mountPath }}
+              subPathExpr: $(POD_NAME)
           {{- if .Values.auth.authentication.enabled }}
             {{ if eq .Values.auth.authentication.provider "athenz" }}
             - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
@@ -428,10 +437,6 @@ spec:
           {{- if .Values.broker.healthCheck.enabled }}
             - mountPath: /metrics-data
               name: metrics-volume
-          {{- end }}
-          {{- if .Values.broker.volumes.logs2ebs }}
-            - mountPath: /pulsar/logs
-              name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-{{ .Values.broker.volumes.logs.name }}"
           {{- end }}
           {{- if .Values.broker.extraVolumeMounts }}
 {{ toYaml .Values.broker.extraVolumeMounts | indent 10 }}
@@ -461,6 +466,12 @@ spec:
             - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
               path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
       {{ end }}
+      {{ end }}
+      {{ if not .Values.broker.volumes.logs2ebs }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-{{ .Values.broker.volumes.logs.name }}"
+        hostPath:
+          path: {{ .Values.broker.volumes.logs.mountPath }}
+          type: {{ .Values.broker.volumes.logs.type }}
       {{ end }}
       {{- if .Values.broker.extraVolumes }}
 {{ toYaml .Values.broker.extraVolumes | indent 6 }}

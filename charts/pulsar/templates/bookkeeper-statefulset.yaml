@@ -238,12 +238,18 @@ spec:
       {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
         image: "{{ .Values.images.bookie.repository }}:{{ .Values.images.bookie.tag }}"
+        imagePullPolicy: {{ .Values.images.bookie.pullPolicy }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
              - NET_RAW
-        imagePullPolicy: {{ .Values.images.bookie.pullPolicy }}
         {{- if .Values.bookkeeper.probe.liveness.enabled }}
         livenessProbe:
           httpGet:
@@ -312,10 +318,9 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
         volumeMounts:
-        {{ if .Values.bookkeeper.volumes.logs2ebs }}
-        - mountPath: /pulsar/logs
-          name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.logs.name }}"
-        {{ end }}
+        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.logs.name }}"
+          mountPath: {{ .Values.bookkeeper.volumes.logs.mountPath }}
+          subPathExpr: $(POD_NAME)
         {{- if .Values.bookkeeper.volumes.useSingleCommonVolume }}
           - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.common.name }}"
             mountPath: /pulsar/data/bookkeeper
@@ -373,6 +378,12 @@ spec:
             - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
               path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
       {{ end }}
+      {{ end }}
+      {{ if not .Values.bookkeeper.volumes.logs2ebs }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.logs.name }}"
+        hostPath:
+          path: {{ .Values.bookkeeper.volumes.logs.mountPath }}
+          type: {{ .Values.bookkeeper.volumes.logs.type }}
       {{ end }}
       {{- if not (and (and .Values.persistence .Values.volumes.persistence) .Values.bookkeeper.volumes.persistence) }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.journal.name }}"

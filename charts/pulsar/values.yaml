@@ -445,6 +445,7 @@ zookeeper:
       size: 100Gi
       local_storage: true
       mountPath: /pulsar/logs
+      type: DirectoryOrCreate
   ## Zookeeper configmap
   ## templates/zookeeper-configmap.yaml
   ##
@@ -576,6 +577,7 @@ bookkeeper:
       size: 100Gi
       local_storage: true
       mountPath: /pulsar/logs
+      type: DirectoryOrCreate
     journal:
       name: journal
       size: 10Gi
@@ -727,6 +729,14 @@ autorecovery:
     BOOKIE_MEM: >
       -Xms64m -Xmx64m
     PULSAR_PREFIX_useV2WireProtocol: "true"
+  volumes:
+    logs2ebs: false
+    logs:
+      name: logs
+      size: 100Gi
+      local_storage: true
+      mountPath: /pulsar/logs
+      type: DirectoryOrCreate
 
 ## Pulsar Zookeeper metadata. The metadata will be deployed as
 ## soon as the last zookeeper node is reachable. The deployment
@@ -842,6 +852,7 @@ broker:
       size: 100Gi
       local_storage: true
       mountPath: /pulsar/logs
+      type: DirectoryOrCreate
   ## Broker configmap
   ## templates/broker-configmap.yaml
   ##
@@ -1211,6 +1222,14 @@ toolset:
   additionalCommand:
   service_account:
     name: "replace"
+  volumes:
+    logs2ebs: false
+    logs:
+      name: logs
+      size: 100Gi
+      local_storage: true
+      mountPath: /pulsar/logs
+      type: DirectoryOrCreate
 
 ## Pulsar: Trafficserver
 ## templates/trafficserver-deployment.yaml
