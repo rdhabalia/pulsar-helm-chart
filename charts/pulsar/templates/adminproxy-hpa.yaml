@@ -31,6 +31,6 @@ spec:
   minReplicas: {{ .Values.adminproxy.autoscaling.minReplicas }}
   scaleTargetRef:
     apiVersion: apps/v1
-    kind: StatefulSet
+    kind: Deployment
     name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
   {{- end }}

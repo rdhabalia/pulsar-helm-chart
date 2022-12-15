@@ -20,7 +20,7 @@
 
 {{- if .Values.components.adminproxy }}
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
   namespace: {{ template "pulsar.namespace" . }}
@@ -28,15 +28,13 @@ metadata:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
     component: {{ .Values.adminproxy.component }}
 spec:
-  serviceName: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
   replicas: {{ .Values.adminproxy.replicaCount }}
   selector:
     matchLabels:
       {{- include "pulsar.matchLabels" . | nindent 6 }}
       component: {{ .Values.adminproxy.component }}
-  updateStrategy:
+  strategy:
     type: RollingUpdate
-  podManagementPolicy: Parallel
   template:
     metadata:
       labels:

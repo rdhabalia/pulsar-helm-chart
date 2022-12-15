@@ -899,7 +899,7 @@ broker:
     configmap: "replace"
 
 ## Pulsar: Adminproxy cluster
-## templates/adminproxy-statefulset.yaml
+## templates/adminproxy-deployment.yaml
 ##
 adminproxy:
   # use a component name that matches your grafana configuration
@@ -1222,6 +1222,9 @@ toolset:
   additionalCommand:
   service_account:
     name: "replace"
+    annotations:
+      eks.amazonaws.com/role-arn: "test"
+    configmap: "replace"
   volumes:
     logs2ebs: false
     logs:
