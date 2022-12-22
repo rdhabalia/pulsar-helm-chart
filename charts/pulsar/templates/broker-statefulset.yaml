@@ -199,6 +199,34 @@ spec:
             name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       {{ end }}
       {{ end }}
+      ## zk keystore generation init container
+      - name: init-zkcertgen
+        image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
+        imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        env:
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.key.pem
+          - name: INIT_RUN
+            value:
+        command: ["sh", "-c"]
+        args:
+          - >
+            echo "jks cert script started";
+            bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.key.pem {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem;
+            echo "zookeeper configurations";
+            cat conf/zookeeper.conf;
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
 # This init container will wait for zookeeper to be ready before
       # deploying the bookies
       - name: wait-zookeeper-ready
