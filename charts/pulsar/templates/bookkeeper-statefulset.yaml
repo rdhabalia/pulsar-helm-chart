@@ -302,6 +302,10 @@ spec:
           bash /pulsar/bin/healthcheck-startup.sh;
           echo "health-check service started";
           {{ end }}
+          {{ if .Values.bookkeeper.zktls.enabled }}
+          echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem;
+          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem | crontab -;
+          {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar bookie;
       {{- if and .Values.rbac.enabled .Values.rbac.psp }}
         securityContext:
@@ -360,6 +364,10 @@ spec:
         {{- if eq .Values.auth.authentication.provider "athenz" }}
         - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
           name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+        {{- if .Values.bookkeeper.zktls.enabled }}
+        - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+          name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+        {{- end }}
         {{- end }}
         {{- end }}
       volumes:

@@ -231,6 +231,10 @@ spec:
           {{- include "pulsar.zookeeper.tls.settings" . | nindent 10 }}
           bin/generate-zookeeper-config.sh conf/zookeeper.conf;
           cat conf/zookeeper.conf; crond;
+          {{ if .Values.zookeeper.zktls.enabled }}
+          echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem;
+          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem | crontab -;
+          {{ end }}
           {{ if .Values.zookeeper.healthCheck.enabled }}
           echo "*/5 * * * *" /pulsar/bin/zookeeper-healthcheck.sh | crontab -;
           {{ end }}
@@ -333,6 +337,10 @@ spec:
         {{ if eq .Values.auth.authentication.provider "athenz" }}
         - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
           name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+        {{ if .Values.zookeeper.zktls.enabled }}
+        - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+          name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+        {{ end }}
         {{ end }}
         {{ end }}
         - name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}-{{ .Values.zookeeper.volumes.data.name }}"

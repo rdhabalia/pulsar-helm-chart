@@ -422,6 +422,10 @@ spec:
           bash /pulsar/bin/healthcheck-startup.sh;
           echo "health-check service started";
         {{- end }}
+        {{- if .Values.broker.zktls.enabled }}
+          echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.key.pem;
+          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.broker.service_account.name }}.cert.pem | crontab -;
+        {{- end}}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar broker;
         ports:
         # prometheus needs to access /metrics endpoint

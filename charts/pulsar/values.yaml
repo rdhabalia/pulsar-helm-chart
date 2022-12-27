@@ -374,6 +374,8 @@ zookeeper:
     # cloud.google.com/gke-nodepool: default-pool
   healthCheck:
     enabled: false
+  zktls:
+    enabled: true
   probe:
     liveness:
       enabled: true
@@ -520,6 +522,8 @@ bookkeeper:
     # cloud.google.com/gke-nodepool: default-pool
   healthCheck:
     enabled: false
+  zktls:
+    enabled: true
   probe:
     liveness:
       enabled: true
@@ -795,6 +799,8 @@ broker:
     # cloud.google.com/gke-nodepool: default-pool
   healthCheck:
     enabled: false
+  zktls:
+    enabled: true
   probe:
     liveness:
       enabled: true
