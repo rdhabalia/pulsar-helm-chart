@@ -722,6 +722,8 @@ autorecovery:
   gracePeriod: 30
   healthCheck:
     enabled: false
+  zktls:
+    enabled: true
   resources:
     requests:
       memory: 64Mi
@@ -733,6 +735,11 @@ autorecovery:
     BOOKIE_MEM: >
       -Xms64m -Xmx64m
     PULSAR_PREFIX_useV2WireProtocol: "true"
+  service_account:
+    name: "replace"
+    annotations:
+      eks.amazonaws.com/role-arn: "test"
+    configmap: "replace"
   volumes:
     logs2ebs: false
     logs:
@@ -1199,6 +1206,8 @@ toolset:
   annotations: {}
   tolerations: []
   gracePeriod: 30
+  zktls:
+    enabled: true
   resources:
     requests:
       memory: 256Mi

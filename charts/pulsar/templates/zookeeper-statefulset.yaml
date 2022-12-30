@@ -166,6 +166,34 @@ spec:
             subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
       {{ end }}
       {{ end }}
+      ## initialize jks cert generation for zookeeper zk client usage
+      - name: init-zkcertgen
+        image: "{{ .Values.images.zookeeper.repository }}:{{ .Values.images.zookeeper.tag }}"
+        imagePullPolicy: {{ .Values.images.zookeeper.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+             - NET_RAW
+        env:
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem
+          - name: INIT_RUN
+            value:
+        command: ["sh", "-c"]
+        args:
+          - >
+            echo "jks cert script started";
+            bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem;
+            echo "zookeeper configurations";
+            cat conf/zookeeper.conf;
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       containers:
       {{ if .Values.auth.authentication.enabled }}
       {{ if eq .Values.auth.authentication.provider "athenz" }}
