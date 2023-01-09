@@ -205,6 +205,7 @@ spec:
         command: ["sh", "-c"]
         args:
         - >
+          export OPTS="$OPTS {{ .Values.autorecovery.configData.zkClientJvmArgs }}";
           {{- include "pulsar.autorecovery.init.verify_cluster_id" . | nindent 10 }}
         envFrom:
         - configMapRef:
@@ -216,6 +217,10 @@ spec:
              - NET_RAW
         volumeMounts:
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       containers:
       {{ if .Values.auth.authentication.enabled }}
       {{ if eq .Values.auth.authentication.provider "athenz" }}
@@ -288,14 +293,15 @@ spec:
         command: ["sh", "-c"]
         args:
         - >
+          export OPTS="$OPTS {{ .Values.autorecovery.configData.zkClientJvmArgs }}";
           bin/apply-config-from-env.py conf/bookkeeper.conf; crond;
           {{- include "pulsar.autorecovery.zookeeper.tls.settings" . | nindent 10 }}
           {{ if .Values.autorecovery.healthCheck.enabled }}
-          echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh | crontab -;
+          echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh '"{{ .Values.bookkeeper.configData.zkClientJvmArgs }}"' | crontab -;
           {{ end }}
           {{ if .Values.autorecovery.zktls.enabled }}
           echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem;
-          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem | crontab -;
+          (crontab -l; echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/bookkeeper autorecovery
         ports:

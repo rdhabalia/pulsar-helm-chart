@@ -259,12 +259,12 @@ spec:
           {{- include "pulsar.zookeeper.tls.settings" . | nindent 10 }}
           bin/generate-zookeeper-config.sh conf/zookeeper.conf;
           cat conf/zookeeper.conf; crond;
+          {{ if .Values.zookeeper.healthCheck.enabled }}
+          echo "*/5 * * * *" /pulsar/bin/zookeeper-healthcheck.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem | crontab -;
+          {{ end }}
           {{ if .Values.zookeeper.zktls.enabled }}
           echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem;
-          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem | crontab -;
-          {{ end }}
-          {{ if .Values.zookeeper.healthCheck.enabled }}
-          echo "*/5 * * * *" /pulsar/bin/zookeeper-healthcheck.sh | crontab -;
+          (crontab -l; echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.zookeeper.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar zookeeper;
         ports:
@@ -304,8 +304,8 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}"
         {{- $zkConnectCommand := "" -}}
-        {{- if and .Values.tls.enabled .Values.tls.zookeeper.enabled }}
-        {{- $zkConnectCommand = print "openssl s_client -quiet -crlf -connect localhost:" .Values.zookeeper.ports.clientTls " -cert /pulsar/certs/zookeeper/tls.crt -key /pulsar/certs/zookeeper/tls.key" -}}
+        {{- if .Values.zookeeper.zktls.enabled }}
+        {{- $zkConnectCommand = print "openssl s_client -quiet -crlf -connect localhost:" .Values.zookeeper.configData.PULSAR_PREFIX_secureClientPort " -cert /var/lib/sia/certs/" .Values.auth.authentication.athenz.certs.domain "." .Values.zookeeper.service_account.name ".cert.pem -key /var/lib/sia/keys/" .Values.auth.authentication.athenz.certs.domain "." .Values.zookeeper.service_account.name ".key.pem " -}}
         {{- else -}}
         {{- $zkConnectCommand = print "nc localhost " .Values.zookeeper.ports.client -}}
 

@@ -171,7 +171,7 @@ spec:
           bin/apply-config-from-env.py conf/bookkeeper.conf;
           {{ if .Values.toolset.zktls.enabled }}
           echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem;
-          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem | crontab -;
+          (crontab -l; echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           {{- include "pulsar.toolset.zookeeper.tls.settings" . | nindent 10 }}
           sleep 10000000000

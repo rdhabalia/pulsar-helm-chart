@@ -202,6 +202,7 @@ spec:
         args:
         # only reformat bookie if bookkeeper is running without persistence
         - >
+          export OPTS="$OPTS {{ .Values.bookkeeper.configData.zkClientJvmArgs }}";
           {{- include "pulsar.bookkeeper.init.verify_cluster_id" . | nindent 10 }}
         envFrom:
         - configMapRef:
@@ -215,7 +216,10 @@ spec:
           readOnlyRootFilesystem: false
         {{- end}}
         volumeMounts:
-        {{- include "pulsar.bookkeeper.certs.volumeMounts" . | nindent 8 }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       containers:
       {{ if .Values.auth.authentication.enabled }}
       {{ if eq .Values.auth.authentication.provider "athenz" }}
@@ -315,6 +319,7 @@ spec:
         command: ["sh", "-c"]
         args:
         - >
+          export OPTS="$OPTS {{ .Values.bookkeeper.configData.zkClientJvmArgs }}";
         {{- if .Values.bookkeeper.additionalCommand }}
           {{ .Values.bookkeeper.additionalCommand }}
         {{- end }}
@@ -325,14 +330,14 @@ spec:
           cat conf/bookkeeper.conf; crond;
           {{- include "pulsar.bookkeeper.zookeeper.tls.settings" . | nindent 10 }}
           {{ if .Values.bookkeeper.healthCheck.enabled }}
-          echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh | crontab -;
+          echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh  '"{{ .Values.bookkeeper.configData.zkClientJvmArgs }}"' | crontab -;
           echo "uvicorn healthcheck-metrics:app --host 0.0.0.0 --port {{ .Values.bookkeeper.ports.healthcheck }} --app-dir=/pulsar/bin &" >> /pulsar/bin/healthcheck-startup.sh;
           bash /pulsar/bin/healthcheck-startup.sh;
           echo "health-check service started";
           {{ end }}
           {{ if .Values.bookkeeper.zktls.enabled }}
           echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem;
-          echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem | crontab -;
+          (crontab -l; echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar bookie;
       {{- if and .Values.rbac.enabled .Values.rbac.psp }}
