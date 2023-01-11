@@ -337,7 +337,7 @@ spec:
           {{ end }}
           {{ if .Values.bookkeeper.zktls.enabled }}
           echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem;
-          (crontab -l; echo "0 0 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem) | sort -u | crontab -;
+          (crontab -l; echo "2 1 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/pulsar bookie;
       {{- if and .Values.rbac.enabled .Values.rbac.psp }}
