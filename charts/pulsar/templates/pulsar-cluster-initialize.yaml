@@ -168,6 +168,11 @@ spec:
           capabilities:
             drop:
              - NET_RAW
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before initializing pulsar metadata
       - name: pulsar-bookkeeper-verify-clusterid

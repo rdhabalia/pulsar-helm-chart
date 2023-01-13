@@ -128,7 +128,6 @@ spec:
             name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
           - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
             name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-
       - name: wait-zookeeper-ready
         image: "{{ .Values.images.bookie.repository }}:{{ .Values.images.bookie.tag }}"
         imagePullPolicy: {{ .Values.images.bookie.pullPolicy }}
@@ -150,6 +149,11 @@ spec:
           capabilities:
             drop:
              - NET_RAW
+        volumeMounts:
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
+            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
       containers:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-init"
         image: "{{ .Values.images.bookie.repository }}:{{ .Values.images.bookie.tag }}"
