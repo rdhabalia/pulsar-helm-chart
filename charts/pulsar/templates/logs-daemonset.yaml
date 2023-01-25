@@ -117,7 +117,7 @@ spec:
 {{ toYaml .Values.athenz.volumes | indent 6 }}
       - name: sia
         configMap:
-          name: "{{ .Values.broker.service_account.configmap }}"
+          name: "{{ .Values.logs.service_account.configmap }}"
 {{ toYaml .Values.athenz.sia.config_map | indent 10 }}
 {{ toYaml .Values.logs.volumes | indent 6 }}
 {{- end }}
