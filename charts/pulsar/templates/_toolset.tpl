@@ -44,22 +44,6 @@ Define toolset tls certs mounts
 Define toolset tls certs volumes
 */}}
 {{- define "pulsar.toolset.certs.volumes" -}}
-{{ if .Values.auth.authentication.enabled }}
-{{ if eq .Values.auth.authentication.provider "athenz" }}
-- name: tls-certs
-  emptyDir:
-    medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
-- name: sia-volume
-  emptyDir:
-    medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
-- name: sia
-  configMap:
-    name: "{{ .Values.bookkeeper.service_account.configmap }}"
-    items:
-    - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
-      path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
-{{ end }}
-{{ end }}
 {{- if and .Values.tls.enabled .Values.tls.zookeeper.enabled }}
 - name: toolset-certs
   secret:

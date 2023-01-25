@@ -48,6 +48,8 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
+      securityContext:
+{{ toYaml .Values.pod.securityContext | indent 8 }}
     {{- if .Values.trafficserver.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.trafficserver.nodeSelector | indent 8 }}
@@ -76,103 +78,84 @@ spec:
               values:
               - {{ .Values.trafficserver.component }}
         {{- end }}
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       serviceAccountName: "{{ .Values.trafficserver.service_account.name }}"
-      {{ end }}
-      {{ else }}
-      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}-acct"
-      {{ end }}
       initContainers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
-        ## sia init container
-        - name: init-sia
-          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
-          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
-          command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-               - NET_RAW
-          resources:
-            requests:
-              memory: 50M
-              cpu: 10m
-          volumeMounts:
-            - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-      {{ end }}
-      {{ end }}
+      ## sia init container
+      - name: init-sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.sia.init_volumeMounts | indent 10 }}
+      ## cameo init container
+      - name: init-cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem
+          - name: INIT_RUN
+            value: "true"
+        resources:
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       containers:
-        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
-          image: "{{ .Values.images.trafficserver.repository }}:{{ .Values.images.trafficserver.tag }}"
-          imagePullPolicy: {{ .Values.images.trafficserver.pullPolicy }}
-          command: ["/scripts/wrapper.sh"]
-          securityContext:
-            capabilities:
-              drop:
-               - NET_RAW
-        {{- if .Values.trafficserver.resources }}
-          resources:
-{{ toYaml .Values.trafficserver.resources | indent 12 }}
-        {{- end }}
-          volumeMounts:
-          {{- if .Values.auth.authentication.enabled }}
-            {{ if eq .Values.auth.authentication.provider "athenz" }}
-            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            {{ end }}
-          {{- end }}
-            - mountPath: /scripts
-              name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
-        {{ if .Values.auth.authentication.enabled }}
-        {{ if eq .Values.auth.authentication.provider "athenz" }}
-        - name: sia
-          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
-          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-               - NET_RAW
-          resources:
-            requests:
-              memory: 50M
-              cpu: 10m
-          volumeMounts:
-            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-              name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-        {{ end }}
-        {{ end }}
-      volumes:
-        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
-          configMap:
+      - name: sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.sia.volumeMounts | indent 10 }}
+      - name: cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
+        env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+        image: "{{ .Values.images.trafficserver.repository }}:{{ .Values.images.trafficserver.tag }}"
+        imagePullPolicy: {{ .Values.images.trafficserver.pullPolicy }}
+        command: ["/scripts/wrapper.sh"]
+        securityContext:
+{{ toYaml .Values.trafficserver.container.securityContext | indent 10 }}
+      {{- if .Values.trafficserver.resources }}
+        resources:
+{{ toYaml .Values.trafficserver.resources | indent 10 }}
+      {{- end }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
+          - mountPath: /scripts
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
-            defaultMode: 0744
-        {{ if .Values.auth.authentication.enabled }}
-        {{ if eq .Values.auth.authentication.provider "athenz" }}
-        - name: tls-certs
-          emptyDir:
-            medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
-        - name: sia-volume
-          emptyDir:
-            medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
-        - name: sia
-          configMap:
-            name: "{{ .Values.trafficserver.service_account.configmap }}"
-            items:
-              - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
-                path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
-        {{ end }}
-        {{ end }}
+      volumes:
+{{ toYaml .Values.athenz.volumes | indent 6 }}
+      - name: sia
+        configMap:
+          name: "{{ .Values.toolset.service_account.configmap }}"
+{{ toYaml .Values.athenz.sia.config_map | indent 10 }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+        configMap:
+          name: "{{ template "pulsar.fullname" . }}-{{ .Values.trafficserver.component }}"
+          defaultMode: 0744
 {{- end }}

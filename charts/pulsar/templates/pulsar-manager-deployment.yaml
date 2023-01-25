@@ -54,60 +54,35 @@ spec:
 {{ toYaml .Values.pulsar_manager.tolerations | indent 8 }}
     {{- end }}
       terminationGracePeriodSeconds: {{ .Values.pulsar_manager.gracePeriod }}
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       serviceAccountName: "{{ .Values.pulsar_manager.service_account.name }}"
-      {{ end }}
-      {{ end }}
       initContainers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
-        ## sia init container
-        - name: init-sia
-          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
-          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
-          command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
-          resources:
-            requests:
-              memory: 50M
-              cpu: 10m
-          volumeMounts:
-            - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-      {{ end }}
-      {{ end }}
+      ## sia init container
+      - name: init-sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.sia.init_volumeMounts | indent 10 }}
       containers:
-        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.pulsar_manager.component }}"
-          image: "{{ .Values.images.pulsar_manager.repository }}:{{ .Values.images.pulsar_manager.tag }}"
-          imagePullPolicy: {{ .Values.images.pulsar_manager.pullPolicy }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-               - NET_RAW
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.pulsar_manager.component }}"
+        image: "{{ .Values.images.pulsar_manager.repository }}:{{ .Values.images.pulsar_manager.tag }}"
+        imagePullPolicy: {{ .Values.images.pulsar_manager.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
         {{- if .Values.pulsar_manager.resources }}
-          resources:
-{{ toYaml .Values.pulsar_manager.resources | indent 12 }}
+        resources:
+{{ toYaml .Values.pulsar_manager.resources | indent 10 }}
         {{- end }}
-          ports:
-          - containerPort: {{ .Values.pulsar_manager.service.targetPort }}
-          volumeMounts:
+        ports:
+        - containerPort: {{ .Values.pulsar_manager.service.targetPort }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
           - name: pulsar-manager-data
             mountPath: /data
-          {{- if .Values.auth.authentication.enabled }}
-            {{ if eq .Values.auth.authentication.provider "athenz" }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            {{ end }}
-          {{- end }}
           envFrom:
           - configMapRef:
               name: "{{ template "pulsar.fullname" . }}-{{ .Values.pulsar_manager.component }}"
@@ -135,47 +110,21 @@ spec:
           - name: PULSAR_MANAGER_OPTS
             value: "$(PULSAR_MANAGER_OPTS) -Dlog4j2.formatMsgNoLookups=true"
         {{- include "pulsar.imagePullSecrets" . | nindent 6}}
-        {{ if .Values.auth.authentication.enabled }}
-        {{ if eq .Values.auth.authentication.provider "athenz" }}
-        - name: sia
-          image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
-          imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
-          resources:
-            requests:
-              memory: 50M
-              cpu: 10m
-          volumeMounts:
-            - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-              name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-              name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-            - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-              mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-              subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-          {{ end }}
-          {{ end }}
-      volumes:
+      - name: sia
+        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
+        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.sia.volumeMounts | indent 10 }}
+    volumes:
+{{ toYaml .Values.athenz.volumes | indent 6 }}
+      - name: sia
+        configMap:
+          name: "{{ .Values.pulsar_manager.service_account.configmap }}"
+{{ toYaml .Values.athenz.sia.config_map | indent 10 }}
         - name: pulsar-manager-data
           emptyDir: {}
-        {{ if .Values.auth.authentication.enabled }}
-        {{ if eq .Values.auth.authentication.provider "athenz" }}
-        - name: tls-certs
-          emptyDir:
-            medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
-        - name: sia-volume
-          emptyDir:
-            medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
-        - name: sia
-          configMap:
-            name: "{{ .Values.pulsar_manager.service_account.configmap }}"
-            items:
-              - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
-                path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
-        {{ end }}
-        {{ end }}
 {{- end }}

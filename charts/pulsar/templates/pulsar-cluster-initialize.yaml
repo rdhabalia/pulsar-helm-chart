@@ -35,101 +35,69 @@ spec:
 {{- end }}
   template:
     spec:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
+      securityContext:
+{{ toYaml .Values.pod.securityContext | indent 8 }}
       serviceAccountName: "{{ .Values.bookkeeper.service_account.name }}"
-      {{ end }}
-      {{ else }}
-      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
-      {{ end }}
+    {{- if .Values.broker.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.broker.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.broker.tolerations }}
+      tolerations:
+{{- with .Values.broker.tolerations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+    {{- end }}
       initContainers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       ## sia init container
       - name: init-sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         resources:
-          requests:
-            memory: 50M
-            cpu: 10m
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
         volumeMounts:
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
+{{ toYaml .Values.athenz.sia.init_volumeMounts | indent 10 }}
       ## cameo init container
       - name: init-cameo
         image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
         imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
           - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem
           - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem
-          - name: CERT_GROUP
-            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.group }}
-          - name: CERT_KEY
-            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.key }}
-          - name: PRIVATEKEY_KEY
-            value: {{ .Values.auth.authentication.athenz.certs.cameo.cert.private_key }}
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem
           - name: INIT_RUN
             value: "true"
         resources:
-          requests:
-            memory: "128M"
-            cpu: "250m"
-          limits:
-            memory: "150M"
-            cpu: "500m"
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-      {{ end }}
-      {{ end }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       ## zk keystore generation init container
       - name: init-zkcertgen
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem
           - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem
-          - name: INIT_RUN
-            value:
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem
         command: ["sh", "-c"]
         args:
           - >
             echo "jks cert script started";
-            bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem;
+            bin/jks-cert-generator.sh {{ .Values.athenz.domain }}.{{ .Values.bookkeeper.service_account.name }}.key.pem {{ .Values.athenz.domain }}.{{ .Values.bookkeeper.service_account.name }}.cert.pem;
             echo "zookeeper configurations";
             cat conf/zookeeper.conf;
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       {{- if .Values.pulsar_metadata.configurationStore }}
       - name: wait-cs-ready
         image: "{{ .Values.pulsar_metadata.image.repository }}:{{ .Values.pulsar_metadata.image.tag }}"
@@ -140,12 +108,8 @@ spec:
             until nslookup {{ .Values.pulsar_metadata.configurationStore}}; do
               sleep 3;
             done;
-
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
       {{- end }}
       - name: wait-zookeeper-ready
         image: "{{ .Values.pulsar_metadata.image.repository }}:{{ .Values.pulsar_metadata.image.tag }}"
@@ -164,15 +128,9 @@ spec:
             done;
             {{- end}}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before initializing pulsar metadata
       - name: pulsar-bookkeeper-verify-clusterid
@@ -191,19 +149,15 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       containers:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.pulsar_metadata.component }}"
         image: "{{ .Values.pulsar_metadata.image.repository }}:{{ .Values.pulsar_metadata.image.tag }}"
         imagePullPolicy: {{ .Values.pulsar_metadata.image.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
       {{- if .Values.pulsar_metadata.resources }}
         resources:
 {{ toYaml .Values.pulsar_metadata.resources | indent 10 }}
@@ -251,18 +205,14 @@ spec:
             {{- if .Values.extraInitCommand }}
               {{ .Values.extraInitCommand }}
             {{- end }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       volumes:
-      {{- include "pulsar.toolset.certs.volumes" . | nindent 6 }}
+{{ toYaml .Values.athenz.volumes | indent 6 }}
+      - name: sia
+        configMap:
+          name: "{{ .Values.bookkeeper.service_account.configmap }}"
+{{ toYaml .Values.athenz.sia.config_map | indent 10 }}
       restartPolicy: OnFailure
 {{- end }}
 {{- end }}

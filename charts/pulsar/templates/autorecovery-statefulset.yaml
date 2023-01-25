@@ -63,6 +63,8 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
+      securityContext:
+{{ toYaml .Values.pod.securityContext | indent 8 }}
     {{- if .Values.autorecovery.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.autorecovery.nodeSelector | indent 8 }}
@@ -113,7 +115,7 @@ spec:
                 values:
                 - {{ .Values.autorecovery.component }}
             topologyKey: "kubernetes.io/hostname"
-        {{ else }}
+          {{ else }}
           {{ .Values.autorecovery.affinity.type }}:
             - weight: 100
               podAffinityTerm:
@@ -132,71 +134,60 @@ spec:
                       values:
                       - {{ .Values.autorecovery.component }}
                 topologyKey: "kubernetes.io/hostname"
-        {{ end }}
+          {{ end }}
         {{- end }}
       terminationGracePeriodSeconds: {{ .Values.autorecovery.gracePeriod }}
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       serviceAccountName: "{{ .Values.autorecovery.service_account.name }}"
-      {{ end }}
-      {{ else }}
-    {{- if and .Values.rbac.enabled .Values.rbac.psp }}
-      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
-    {{- end}}
-      {{ end }}
       initContainers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       ## sia init container
       - name: init-sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         resources:
-          requests:
-            memory: 50M
-            cpu: 10m
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
         volumeMounts:
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-      {{ end }}
-      {{ end }}
+{{ toYaml .Values.athenz.sia.init_volumeMounts | indent 10 }}
+      ## cameo init container
+      - name: init-cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem
+          - name: INIT_RUN
+            value: "true"
+        resources:
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       ## initialize jks cert generation for autorecovery zk client usage
       - name: init-zkcertgen
         image: "{{ .Values.images.autorecovery.repository }}:{{ .Values.images.autorecovery.tag }}"
         imagePullPolicy: {{ .Values.images.autorecovery.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem
           - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem
-          - name: INIT_RUN
-            value:
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem
         command: ["sh", "-c"]
         args:
           - >
             echo "jks cert script started";
-            bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem;
+            bin/jks-cert-generator.sh {{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem {{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem;
             echo "zookeeper configurations";
             cat conf/zookeeper.conf;
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before deploying the bookies
       - name: pulsar-bookkeeper-verify-clusterid
@@ -211,63 +202,51 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         volumeMounts:
-        {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       containers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       - name: sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         resources:
-          requests:
-            memory: 50M
-            cpu: 10m
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-        {{ end }}
-        {{ end }}
+{{ toYaml .Values.athenz.sia.volumeMounts | indent 10 }}
+      - name: cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
+        env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem
       {{ if .Values.prometheus.https_scraper }}
       - name: stunnel
         image: "{{ .Values.images.stunnel.repository }}:{{ .Values.images.stunnel.tag }}"
         imagePullPolicy: {{ .Values.images.stunnel.pullPolicy }}
-        args: ["{{ .Values.autorecovery.ports.https }}", "{{ .Values.autorecovery.ports.http }}", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem", "{{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/ca.cert.pem"]
+        args: ["{{ .Values.autorecovery.ports.https }}", "{{ .Values.autorecovery.ports.http }}", "{{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem", "{{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem", "{{ .Values.athenz.certs.path }}/ca.cert.pem"]
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
         ports:
         # prometheus needs to access /metrics endpoint
         - name: https
           containerPort: {{ .Values.autorecovery.ports.https }}
-        securityContext:
-          runAsUser: 65534
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
         resources:
           requests:
             memory: 50M
             cpu: 10m
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       {{ end }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         image: "{{ .Values.images.autorecovery.repository }}:{{ .Values.images.autorecovery.tag }}"
@@ -283,13 +262,7 @@ spec:
 {{ toYaml .Values.autorecovery.resources | indent 10 }}
       {{- end }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
-        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
-          readOnlyRootFilesystem: false
-        {{- end}}
+{{ toYaml .Values.container.securityContext | indent 10 }}
         command: ["sh", "-c"]
         args:
         - >
@@ -300,8 +273,8 @@ spec:
           echo "*/5 * * * *" /pulsar/bin/bookkeeper-healthcheck.sh '"{{ .Values.bookkeeper.configData.zkClientJvmArgs }}"' | crontab -;
           {{ end }}
           {{ if .Values.autorecovery.zktls.enabled }}
-          echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem;
-          (crontab -l; echo "2 1 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem) | sort -u | crontab -;
+          echo "setting up jks cert gen script as cron with key " {{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem;
+          (crontab -l; echo "2 1 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.key.pem  {{ .Values.athenz.domain }}.{{ .Values.autorecovery.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           OPTS="${OPTS} -Dlog4j2.formatMsgNoLookups=true" exec bin/bookkeeper autorecovery
         ports:
@@ -311,25 +284,17 @@ spec:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
           - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}-{{ .Values.autorecovery.volumes.logs.name }}"
             mountPath: {{ .Values.autorecovery.volumes.logs.mountPath }}
             subPathExpr: $(POD_NAME)
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
-        {{- if .Values.auth.authentication.enabled }}
-        {{- if eq .Values.auth.authentication.provider "athenz" }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-        {{- end }}
-        {{- end }}
-        {{- if .Values.autorecovery.zktls.enabled }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-        {{- end }}
         {{ if .Values.autorecovery.healthCheck.enabled }}
           - mountPath: /metrics-data
             name: metrics-volume
         {{ end }}
       volumes:
+{{ toYaml .Values.athenz.volumes | indent 6 }}
       {{ if not .Values.autorecovery.volumes.logs2ebs }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}-{{ .Values.autorecovery.volumes.logs.name }}"
         hostPath:
@@ -338,22 +303,10 @@ spec:
       {{ end }}
       {{- include "pulsar.autorecovery.certs.volumes" . | nindent 6 }}
       {{- include "pulsar.imagePullSecrets" . | nindent 6}}
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
-      - name: tls-certs
-        emptyDir:
-          medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
-      - name: sia-volume
-        emptyDir:
-          medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
       - name: sia
         configMap:
           name: "{{ .Values.autorecovery.service_account.configmap }}"
-          items:
-            - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
-              path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
-      {{ end }}
-      {{ end }}
+{{ toYaml .Values.athenz.sia.config_map | indent 10 }}
       {{ if .Values.autorecovery.healthCheck.enabled }}
       - name: metrics-volume
         emptyDir: {}

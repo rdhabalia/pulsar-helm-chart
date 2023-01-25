@@ -50,6 +50,8 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
+      securityContext:
+{{ toYaml .Values.pod.securityContext | indent 8 }}
     {{- if .Values.prometheus.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
@@ -67,10 +69,7 @@ spec:
         image: "{{ .Values.images.prometheus.repository }}:{{ .Values.images.prometheus.tag }}"
         imagePullPolicy: {{ .Values.images.prometheus.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         {{- if .Values.prometheus.enableAdminApi }}
         args:
           - --web.enable-admin-api
@@ -87,11 +86,6 @@ spec:
           mountPath: /etc/prometheus
         - name: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}-{{ .Values.prometheus.volumes.data.name }}"
           mountPath: /prometheus
-      securityContext:
-        fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
       volumes:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}-config"
         configMap:

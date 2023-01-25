@@ -59,6 +59,8 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
+      securityContext:
+{{ toYaml .Values.pod.securityContext | indent 8 }}
     {{- if .Values.proxy.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.proxy.nodeSelector | indent 8 }}
@@ -152,10 +154,7 @@ spec:
             done;
             {{- end}}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
       # This init container will wait for at least one broker to be ready before
       # deploying the proxy
       - name: wait-broker-ready
@@ -172,10 +171,7 @@ spec:
               brokerServiceNumber="$(nslookup -timeout=10 {{ template "pulsar.fullname" . }}-{{ .Values.broker.component }} | grep Name | wc -l)";
             done;
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
       containers:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.proxy.component }}"
         image: "{{ .Values.images.proxy.repository }}:{{ .Values.images.proxy.tag }}"
@@ -238,10 +234,7 @@ spec:
           containerPort: {{ .Values.proxy.ports.pulsarssl }}
         {{- end }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         {{- if and .Values.rbac.enabled .Values.rbac.psp }}
           readOnlyRootFilesystem: false
         {{- end }}

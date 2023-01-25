@@ -52,6 +52,8 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
+      securityContext:
+{{ toYaml .Values.pod.securityContext | indent 8 }}
     {{- if .Values.toolset.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.toolset.nodeSelector | indent 8 }}
@@ -61,96 +63,87 @@ spec:
 {{ toYaml .Values.toolset.tolerations | indent 8 }}
     {{- end }}
       terminationGracePeriodSeconds: {{ .Values.toolset.gracePeriod }}
-    {{- if and .Values.rbac.enabled .Values.rbac.psp }}
-      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.proxy.component }}"
-    {{- end}}
-    {{ if .Values.auth.authentication.enabled }}
-    {{ if eq .Values.auth.authentication.provider "athenz" }}
       serviceAccountName: "{{ .Values.toolset.service_account.name }}"
-    {{ end }}
-    {{ end }}
-    # init containers
       initContainers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       ## sia init container
       - name: init-sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         resources:
-          requests:
-            memory: 50M
-            cpu: 10m
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
         volumeMounts:
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-      {{ end }}
-      {{ end }}
+{{ toYaml .Values.athenz.sia.init_volumeMounts | indent 10 }}
+      ## cameo init container
+      - name: init-cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem
+          - name: INIT_RUN
+            value: "true"
+        resources:
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       ## initialize jks cert generation for toolset zk client usage
       - name: init-zkcertgen
         image: "{{ .Values.images.zookeeper.repository }}:{{ .Values.images.zookeeper.tag }}"
         imagePullPolicy: {{ .Values.images.zookeeper.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         env:
           - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/certs/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem
           - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}/keys/{{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem
-          - name: INIT_RUN
-            value:
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem
         command: ["sh", "-c"]
         args:
           - >
             echo "jks cert script started";
-            bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem;
+            bin/jks-cert-generator.sh {{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem {{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem;
             echo "zookeeper configurations";
             cat conf/zookeeper.conf;
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
       containers:
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
       - name: sia
         image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
         imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
+{{ toYaml .Values.container.securityContext | indent 10 }}
         resources:
-          requests:
-            memory: 50M
-            cpu: 10m
+{{ toYaml .Values.athenz.sia.resources | indent 10 }}
         volumeMounts:
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-          - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-            name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-          - name: {{ .Values.auth.authentication.athenz.certs.sia_config.name }}
-            mountPath: {{ .Values.auth.authentication.athenz.certs.sia_config.path }}
-            subPath: {{ .Values.auth.authentication.athenz.certs.sia_config.sub_path }}
-      {{ end }}
-      {{ end }}
+{{ toYaml .Values.athenz.sia.volumeMounts | indent 10 }}
+      - name: cameo
+        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
+        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
+        resources:
+{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
+        volumeMounts:
+{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
+        env:
+{{ toYaml .Values.athenz.cameo.env | indent 10 }}
+          - name: ATHENZ_SERVICE_CERT_PATH
+            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem
+          - name: ATHENZ_SERVICE_KEY_PATH
+            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}"
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
+        securityContext:
+{{ toYaml .Values.container.securityContext | indent 10 }}
         env:
         - name: POD_NAME
           valueFrom:
@@ -170,85 +163,40 @@ spec:
           bin/apply-config-from-env.py conf/client.conf;
           bin/apply-config-from-env.py conf/bookkeeper.conf;
           {{ if .Values.toolset.zktls.enabled }}
-          echo "setting up jks cert gen script as cron with key " {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem;
-          (crontab -l; echo "2 1 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.key.pem  {{ .Values.auth.authentication.athenz.certs.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem) | sort -u | crontab -;
+          echo "setting up jks cert gen script as cron with key " {{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem;
+          (crontab -l; echo "2 1 * * *" /pulsar/bin/jks-cert-generator.sh {{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.key.pem  {{ .Values.athenz.domain }}.{{ .Values.toolset.service_account.name }}.cert.pem) | sort -u | crontab -;
           {{ end }}
           {{- include "pulsar.toolset.zookeeper.tls.settings" . | nindent 10 }}
           sleep 10000000000
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-             - NET_RAW
-        {{- if and .Values.rbac.enabled .Values.rbac.psp }}
-          readOnlyRootFilesystem: false
-        {{- end }}
         envFrom:
         - configMapRef:
             name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}"
         volumeMounts:
-        - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}-{{ .Values.toolset.volumes.logs.name }}"
-          mountPath: {{ .Values.toolset.volumes.logs.mountPath }}
-          subPathExpr: $(POD_NAME)
-        {{- if .Values.auth.authentication.enabled }}
-        {{- if eq .Values.auth.authentication.provider "jwt" }}
-        - mountPath: "/pulsar/tokens"
-          name: client-token
-          readOnly: true
-        {{- end }}
-        {{- end }}
-        {{- if and .Values.tls.enabled (or .Values.tls.broker.enabled .Values.tls.proxy.enabled) }}
+{{ toYaml .Values.athenz.volumeMounts | indent 8 }}
+      - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}-{{ .Values.toolset.volumes.logs.name }}"
+        mountPath: {{ .Values.toolset.volumes.logs.mountPath }}
+        subPathExpr: $(POD_NAME)
+      {{- if and .Values.tls.enabled (or .Values.tls.broker.enabled .Values.tls.proxy.enabled) }}
         - mountPath: "/pulsar/certs/proxy-ca"
           name: proxy-ca
           readOnly: true
-        {{- end}}
-        {{- if .Values.toolset.extraVolumeMounts }}
+      {{- end}}
+      {{- if .Values.toolset.extraVolumeMounts }}
 {{ toYaml .Values.toolset.extraVolumeMounts | indent 8 }}
-        {{- end }}
-        {{- include "pulsar.toolset.certs.volumeMounts" . | nindent 8 }}
-        {{- if .Values.auth.authentication.enabled }}
-        {{- if eq .Values.auth.authentication.provider "athenz" }}
-        - mountPath: {{ .Values.auth.authentication.athenz.certs.sia_volume.path }}
-          name: {{ .Values.auth.authentication.athenz.certs.sia_volume.name }}
-        {{- end }}
-        {{- end }}
-        {{- if .Values.toolset.zktls.enabled }}
-        - mountPath: {{ .Values.auth.authentication.athenz.certs.tls_certs.path }}
-          name: {{ .Values.auth.authentication.athenz.certs.tls_certs.name }}
-        {{- end }}
+      {{- end }}
+      {{- include "pulsar.toolset.certs.volumeMounts" . | nindent 8 }}
       volumes:
+{{ toYaml .Values.athenz.volumes | indent 6 }}
+      - name: sia
+        configMap:
+          name: "{{ .Values.toolset.service_account.configmap }}"
+{{ toYaml .Values.athenz.sia.config_map | indent 10 }}
       {{ if not .Values.toolset.volumes.logs2ebs }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}-{{ .Values.toolset.volumes.logs.name }}"
         hostPath:
           path: {{ .Values.toolset.volumes.logs.mountPath }}
           type: {{ .Values.toolset.volumes.logs.type }}
       {{ end }}
-      {{ if .Values.auth.authentication.enabled }}
-      {{ if eq .Values.auth.authentication.provider "athenz" }}
-      - name: tls-certs
-        emptyDir:
-          medium: {{ .Values.auth.authentication.athenz.certs.tls_certs.medium }}
-      - name: sia-volume
-        emptyDir:
-          medium: {{ .Values.auth.authentication.athenz.certs.sia_volume.medium }}
-      - name: sia
-        configMap:
-          name: "{{ .Values.toolset.service_account.configmap }}"
-          items:
-            - key: {{ .Values.auth.authentication.athenz.certs.sia_config.key.name }}
-              path: {{ .Values.auth.authentication.athenz.certs.sia_config.key.path }}
-      {{ end }}
-      {{ end }}
-      {{- if .Values.auth.authentication.enabled }}
-      {{- if eq .Values.auth.authentication.provider "jwt" }}
-      - name: client-token
-        secret:
-          secretName: "{{ .Release.Name }}-token-{{ .Values.auth.superUsers.client }}"
-          items:
-            - key: TOKEN
-              path: client/token
-      {{- end}}
-      {{- end}}
       {{- if and .Values.tls.enabled (or .Values.tls.broker.enabled .Values.tls.proxy.enabled) }}
       - name: proxy-ca
         secret:
@@ -260,6 +208,5 @@ spec:
       {{- if .Values.toolset.extraVolumes }}
 {{ toYaml .Values.toolset.extraVolumes | indent 6 }}
       {{- end }}
-      {{- include "pulsar.toolset.certs.volumes" . | nindent 6 }}
       {{- include "pulsar.imagePullSecrets" . | nindent 6}}
 {{- end }}
