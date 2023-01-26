@@ -647,7 +647,7 @@ bookkeeper:
     dbStorage_readAheadCacheMaxSizeMb: "32"
     dbStorage_rocksDB_writeBufferSizeMB: "8"
     dbStorage_rocksDB_blockCacheSize: "8388608"
-    zkClientJvmArgs: "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty -Dzookeeper.client.secure=true -Dzookeeper.ssl.keyStore.location=/var/run/tls/zkkeystore.jks -Dzookeeper.ssl.keyStore.password=password -Dzookeeper.ssl.trustStore.location=/var/lib/sia/certs/ca.cert.pem -Dzookeeper.ssl.hostnameVerification=false"
+    zkClientJvmArgs: "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty -Dzookeeper.client.secure=true -Dzookeeper.ssl.keyStore.location=/var/run/tls/zkkeystore.jks -Dzookeeper.ssl.keyStore.password=changeit -Dzookeeper.ssl.trustStore.location=/var/lib/sia/certs/ca.cert.pem -Dzookeeper.ssl.hostnameVerification=false"
   ## Add a custom command to the start up process of the bookie pods (e.g. update-ca-certificates, jvm commands, etc)
   additionalCommand:
   ## Bookkeeper Service
@@ -716,7 +716,7 @@ autorecovery:
     BOOKIE_MEM: >
       -Xms64m -Xmx64m
     PULSAR_PREFIX_useV2WireProtocol: "true"
-    zkClientJvmArgs: "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty -Dzookeeper.client.secure=true -Dzookeeper.ssl.keyStore.location=/var/run/tls/zkkeystore.jks -Dzookeeper.ssl.keyStore.password=password -Dzookeeper.ssl.trustStore.location=/var/lib/sia/certs/ca.cert.pem -Dzookeeper.ssl.hostnameVerification=false"
+    zkClientJvmArgs: "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty -Dzookeeper.client.secure=true -Dzookeeper.ssl.keyStore.location=/var/run/tls/zkkeystore.jks -Dzookeeper.ssl.keyStore.password=changeit -Dzookeeper.ssl.trustStore.location=/var/lib/sia/certs/ca.cert.pem -Dzookeeper.ssl.hostnameVerification=false"
   service_account:
     name: "replace"
     annotations:
@@ -872,7 +872,7 @@ broker:
     managedLedgerDefaultEnsembleSize: "2"
     managedLedgerDefaultWriteQuorum: "2"
     managedLedgerDefaultAckQuorum: "2"
-    zkClientJvmArgs: "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty -Dzookeeper.client.secure=true -Dzookeeper.ssl.keyStore.location=/var/run/tls/zkkeystore.jks -Dzookeeper.ssl.keyStore.password=password -Dzookeeper.ssl.trustStore.location=/var/lib/sia/certs/ca.cert.pem -Dzookeeper.ssl.hostnameVerification=false"
+    zkClientJvmArgs: "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty -Dzookeeper.client.secure=true -Dzookeeper.ssl.keyStore.location=/var/run/tls/zkkeystore.jks -Dzookeeper.ssl.keyStore.password=changeit -Dzookeeper.ssl.trustStore.location=/var/lib/sia/certs/ca.cert.pem -Dzookeeper.ssl.hostnameVerification=false"
   ## Add a custom command to the start up process of the broker pods (e.g. update-ca-certificates, jvm commands, etc)
   additionalCommand:
   ## Broker service
