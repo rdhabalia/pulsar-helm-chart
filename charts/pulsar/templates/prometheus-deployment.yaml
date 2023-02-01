@@ -28,6 +28,7 @@ metadata:
     component: {{ .Values.prometheus.component }}
 spec:
   replicas: {{ .Values.prometheus.replicaCount }}
+
   selector:
     matchLabels:
       {{- include "pulsar.matchLabels" . | nindent 6 }}
@@ -60,9 +61,7 @@ spec:
       tolerations:
 {{ toYaml .Values.prometheus.tolerations | indent 8 }}
     {{- end }}
-    {{- if or .Values.prometheus.rbac.enabled .Values.prometheus_rbac }}
-      serviceAccount: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}"
-    {{- end }}
+      serviceAccount: {{ .Values.prometheus.service_account.name }}
       terminationGracePeriodSeconds: {{ .Values.prometheus.gracePeriod }}
       containers:
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}"

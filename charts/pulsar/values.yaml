@@ -1352,6 +1352,8 @@ prometheus:
   ##
   service:
     annotations: {}
+  service_account:
+    name: prometheus-svc-account
 
 ## Monitoring Stack: Grafana
 ## templates/grafana-deployment.yaml

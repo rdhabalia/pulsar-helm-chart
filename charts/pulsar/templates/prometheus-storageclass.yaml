@@ -23,7 +23,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}-{{ .Values.prometheus.volumes.data.name }}"
+  name: "{{ .Values.prometheus.volumes.data.storageClassName }}"
   namespace: {{ template "pulsar.namespace" . }}
   labels:
     {{- include "pulsar.standardLabels" . | nindent 4 }}
@@ -32,7 +32,7 @@ provisioner: {{ .Values.prometheus.volumes.data.storageClass.provisioner }}
 allowVolumeExpansion: true
 parameters:
   type: {{ .Values.prometheus.volumes.data.storageClass.type }}
-  fsType: {{ .Values.prometheus.volumes.data.storageClass.fsType }}
+  #fsType: {{ .Values.prometheus.volumes.data.storageClass.fsType }}
 {{- end }}
 {{- end }}
 {{- end }}

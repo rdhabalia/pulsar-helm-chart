@@ -135,60 +135,13 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.adminproxy.gracePeriod }}
       serviceAccountName: "{{ .Values.adminproxy.service_account.name }}"
       initContainers:
-        ## sia init container
-      - name: init-sia
-        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
-        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
-        command: ['sh', '-c', "while :; do /usr/sbin/siad -regionalsts -cmd post && break; done"]
-        securityContext:
-{{ toYaml .Values.container.securityContext | indent 10 }}
-        resources:
-{{ toYaml .Values.athenz.sia.resources | indent 10 }}
-        volumeMounts:
-{{ toYaml .Values.athenz.sia.init_volumeMounts | indent 10 }}
-      ## cameo init container
-      - name: init-cameo
-        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
-        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
-        securityContext:
-{{ toYaml .Values.container.securityContext | indent 10 }}
-        env:
-{{ toYaml .Values.athenz.cameo.env | indent 10 }}
-          - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.adminproxy.service_account.name }}.cert.pem
-          - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.adminproxy.service_account.name }}.key.pem
-          - name: INIT_RUN
-            value: "true"
-        resources:
-{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
-        volumeMounts:
-{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
+      {{- include "pulsar.init-sia" . | nindent 6 }}
+      {{$data := dict "service_account" .Values.adminproxy.service_account.name }}
+      {{- include "pulsar.init-cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       containers:
-      - name: sia
-        image: "{{ .Values.images.sia.repository }}/{{ .Values.images.sia.tag }}"
-        imagePullPolicy: {{ .Values.images.sia.pullPolicy }}
-        securityContext:
-{{ toYaml .Values.container.securityContext | indent 10 }}
-        resources:
-{{ toYaml .Values.athenz.sia.resources | indent 10 }}
-        volumeMounts:
-{{ toYaml .Values.athenz.sia.volumeMounts | indent 10 }}
-      - name: cameo
-        image: "{{ .Values.images.cameo.repository }}/{{ .Values.images.cameo.tag }}"
-        imagePullPolicy: {{ .Values.images.cameo.pullPolicy }}
-        securityContext:
-{{ toYaml .Values.container.securityContext | indent 10 }}
-        resources:
-{{ toYaml .Values.athenz.cameo.resources | indent 10 }}
-        volumeMounts:
-{{ toYaml .Values.athenz.volumeMounts | indent 10 }}
-        env:
-{{ toYaml .Values.athenz.cameo.env | indent 10 }}
-          - name: ATHENZ_SERVICE_CERT_PATH
-            value: {{ .Values.athenz.certs.path }}/{{ .Values.athenz.domain }}.{{ .Values.adminproxy.service_account.name }}.cert.pem
-          - name: ATHENZ_SERVICE_KEY_PATH
-            value: {{ .Values.athenz.certs.key }}/{{ .Values.athenz.domain }}.{{ .Values.adminproxy.service_account.name }}.key.pem
+      {{- include "pulsar.sia" . | nindent 6 }}
+      {{$data := dict "service_account" .Values.adminproxy.service_account.name }}
+      {{- include "pulsar.cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.adminproxy.component }}"
         image: "{{ .Values.images.adminproxy.repository }}:{{ .Values.images.adminproxy.tag }}"
         imagePullPolicy: {{ .Values.images.adminproxy.pullPolicy }}
@@ -235,11 +188,8 @@ spec:
           {{- end }}
           {{- include "pulsar.adminproxy.certs.volumeMounts" . | nindent 10 }}
       volumes:
-{{ toYaml .Values.athenz.volumes | indent 6 }}
-      - name: sia
-        configMap:
-          name: "{{ .Values.adminproxy.service_account.configmap }}"
-{{ toYaml .Values.athenz.sia.config_map | indent 10 }}
+      {{$data := dict "service_account_configmap" .Values.adminproxy.service_account.configmap }}
+      {{- include "pulsar.sia-volumes" (merge (dict "Args" $data) . ) | nindent 6 }}
       {{- if .Values.adminproxy.extraVolumes }}
 {{ toYaml .Values.adminproxy.extraVolumes | indent 6 }}
       {{- end }}
