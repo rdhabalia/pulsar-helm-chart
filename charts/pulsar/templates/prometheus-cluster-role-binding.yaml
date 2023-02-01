@@ -46,7 +46,7 @@ roleRef:
   name: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}"
 subjects:
 - kind: ServiceAccount
-  name: "{{ template "pulsar.fullname" . }}-{{ .Values.prometheus.component }}"
+  name: ".Values.prometheus.service_account.name"
   namespace: {{ template "pulsar.namespace" . }}
 {{- end }}
 {{- end }}
