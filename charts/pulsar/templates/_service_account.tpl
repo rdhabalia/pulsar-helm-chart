@@ -40,6 +40,10 @@ data:
         }
       ],
       "drop_privileges": true,
+      {{ if and (not .Values.athenz.expiry_time) (not .Values.athenz.refresh_interval) }}
+      "expiry_time": .Values.athenz.expiry_time,
+      "refresh_interval": .Values.athenz.refresh_interval,
+      {{ end }}
       {{ if .Args.sandns_wildcard }}
       "user": "appuser",
       "sandns_wildcard": true
