@@ -56,7 +56,7 @@ subjects:
   namespace: {{ template "pulsar.namespace" . }}
 ---
 
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodSecurityPolicy
 metadata:
 {{- if .Values.rbac.limit_to_namespace }}
