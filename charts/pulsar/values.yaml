@@ -197,6 +197,14 @@ images:
     tag: v0.2.0
     pullPolicy: IfNotPresent
     hasCommand: false
+  sia:
+    repository: docker.ouroath.com:4443/containers
+    tag: sia-gke:1.1.7-20240111203528-76165879
+    pullPolicy: IfNotPresent
+  cameo:
+    repository: docker.ouroath.com:4443/fleks
+    tag: cameo:latest
+    pullPolicy: IfNotPresent
 
 ## TLS
 ## templates/tls-certs.yaml
@@ -413,6 +421,11 @@ zookeeper:
   pdb:
     usePolicy: true
     maxUnavailable: 1
+  # TODO: Provided values for now but they should be placeholders replaced by values from cms-pkg
+  service_account:
+    name: "cmsgcpstg-zookeeper-acct"
+    annotations: "iam.gke.io/gcp-service-account: cmsgcpstg-zookeeper-acct@gcp-cms-gcp-nonprod.iam.gserviceaccount.com"
+    configmap: "cmsgcpstg-zookeeper-acct-configmap"
 
 ## Pulsar: Bookkeeper cluster
 ## templates/bookkeeper-statefulset.yaml
@@ -601,6 +614,11 @@ bookkeeper:
   pdb:
     usePolicy: true
     maxUnavailable: 1
+  # TODO: Provided values for now but they should be placeholders replaced by values from cms-pkg
+  service_account:
+    name: "cmsgcpstg-bookie-acct"
+    annotations: "iam.gke.io/gcp-service-account: cmsgcpstg-bookie-acct@gcp-cms-gcp-nonprod.iam.gserviceaccount.com"
+    configmap: "cmsgcpstg-bookie-acct-configmap"
 
 ## Pulsar: Bookkeeper AutoRecovery
 ## templates/autorecovery-statefulset.yaml
@@ -642,6 +660,11 @@ autorecovery:
     BOOKIE_MEM: >
       -Xms64m -Xmx64m
     PULSAR_PREFIX_useV2WireProtocol: "true"
+  # TODO: Provided values for now but they should be placeholders replaced by values from cms-pkg
+  service_account:
+    name: "cmsgcpstg-autorecovery-acct"
+    annotations: "iam.gke.io/gcp-service-account: cmsgcpstg-autorecovery-acct@gcp-cms-gcp-nonprod.iam.gserviceaccount.com"
+    configmap: "cmsgcpstg-autorecovery-acct-configmap"
 
 ## Pulsar Zookeeper metadata. The metadata will be deployed as
 ## soon as the last zookeeper node is reachable. The deployment
@@ -792,8 +815,11 @@ broker:
     maxUnavailable: 1
   ### Broker service account
   ## templates/broker-service-account.yaml
+  # TODO: Provided values for now but they should be placeholders replaced by values from cms-pkg
   service_account:
-    annotations: {}
+    name: "cmsgcpstg-broker-acct"
+    annotations: "iam.gke.io/gcp-service-account: cmsgcpstg-broker-acct@gcp-cms-gcp-nonprod.iam.gserviceaccount.com"
+    configmap: "cmsgcpstg-broker-acct-configmap"
 
 ## Pulsar: Functions Worker
 ## templates/function-worker-configmap.yaml
@@ -982,6 +1008,9 @@ toolset:
   tolerations: []
   gracePeriod: 30
   resources:
+    limits:
+      memory: 256Mi
+      cpu: 0.1
     requests:
       memory: 256Mi
       cpu: 0.1
@@ -1008,6 +1037,11 @@ toolset:
       -XX:MaxDirectMemorySize=128M
   ## Add a custom command to the start up process of the toolset pods (e.g. update-ca-certificates, jvm commands, etc)
   additionalCommand:
+  # TODO: Provided values for now but they should be placeholders replaced by values from cms-pkg
+  service_account:
+    name: "cmsgcpstg-toolset-acct"
+    annotations: "iam.gke.io/gcp-service-account: cmsgcpstg-toolset-acct@gcp-cms-gcp-nonprod.iam.gserviceaccount.com"
+    configmap: "cmsgcpstg-toolset-acct-configmap"
 
 #############################################################
 ### Monitoring Stack : Prometheus / Grafana
@@ -1176,3 +1210,77 @@ job:
   ttl:
     enabled: false
     secondsAfterFinished: 3600
+
+## athenz
+athenz:
+  domain: "cms.gcp.nonprod"
+  ##TODO: Remove expiry_time and refresh_interval from athenz config as it should come from cms-pkg
+  expiry_time: 1440
+  refresh_interval: 60
+  certs:
+    path: /var/lib/sia/certs
+    key: /var/lib/sia/keys
+  sia:
+    resources:
+      requests:
+        memory: 50M
+        cpu: 10m
+    init_volumeMounts:
+      - mountPath: /var/lib/sia
+        name: sia-volume
+      - name: sia
+        mountPath: /etc/sia/sia_config
+        subPath: sia_config
+    volumeMounts:
+      - mountPath: /var/lib/sia
+        name: sia-volume
+      - mountPath: /var/run/tls
+        name: tls-certs
+      - name: sia
+        mountPath: /etc/sia/sia_config
+        subPath: sia_config
+    config_map:
+      items:
+        - name: sia_config
+          key: sia_config
+          path: sia_config
+  cameo:
+    resources:
+      requests:
+        memory: "128M"
+        cpu: "250m"
+      limits:
+        memory: "250M"
+        cpu: "500m"
+    env:
+      - name: CERT_GROUP
+        value: cms.gcp.nonprod.tls
+      - name: CERT_KEY
+        value: cms.gcp.nonprod.tls.cert.pem
+      - name: PRIVATEKEY_KEY
+        value: cms.gcp.nonprod.tls.privatekey.pem
+  volumeMounts:
+    - mountPath: /var/lib/sia
+      name: sia-volume
+    - mountPath: /var/run/tls
+      name: tls-certs
+  volumes:
+    - name: tls-certs
+      emptyDir: {}
+    - name: sia-volume
+      emptyDir: {}
+  container:
+    securityContext:
+      runAsGroup: 10952
+      runAsUser: 1337
+      privileged: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+
+#Omega cluster details
+omega:
+  cluster: consumerdata-nonprod1
+  clusterColo: use1

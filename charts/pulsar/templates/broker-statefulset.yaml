@@ -51,7 +51,6 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
-      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}-acct"
     {{- if .Values.broker.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.broker.nodeSelector | indent 8 }}
@@ -80,7 +79,7 @@ spec:
                 values:
                 - {{ .Values.broker.component }}
             topologyKey: "kubernetes.io/hostname"
-        {{ else }}
+          {{ else }}
           {{ .Values.broker.affinity.type }}:
             - weight: 100
               podAffinityTerm:
@@ -99,10 +98,14 @@ spec:
                       values:
                       - {{ .Values.broker.component }}
                 topologyKey: "kubernetes.io/hostname"
-        {{ end }}
+          {{ end }}
         {{- end }}
       terminationGracePeriodSeconds: {{ .Values.broker.gracePeriod }}
+      serviceAccountName: {{ .Values.broker.service_account.name }}
       initContainers:
+      {{- include "pulsar.gcp.init-sia" . | nindent 6 }}
+      {{$data := dict "service_account" .Values.broker.service_account.name }}
+      {{- include "pulsar.init-cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       # This init container will wait for zookeeper to be ready before
       # deploying the bookies
       - name: wait-zookeeper-ready
@@ -158,6 +161,9 @@ spec:
         volumeMounts:
         {{- include "pulsar.broker.certs.volumeMounts" . | nindent 10 }}
       containers:
+      {{- include "pulsar.gcp.sia" . | nindent 6 }}
+      {{$data := dict "service_account" .Values.broker.service_account.name }}
+      {{- include "pulsar.cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.broker.component }}"
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}
@@ -250,6 +256,8 @@ spec:
           readOnlyRootFilesystem: false
       {{- end }}
       volumes:
+      {{$data := dict "service_account_configmap" .Values.broker.service_account.configmap }}
+      {{- include "pulsar.sia-volumes" (merge (dict "Args" $data) . ) | nindent 6 }}
       {{- if .Values.broker.extraVolumes }}
 {{ toYaml .Values.broker.extraVolumes | indent 6 }}
       {{- end }}

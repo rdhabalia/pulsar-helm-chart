@@ -79,7 +79,7 @@ spec:
                 values:
                 - {{ .Values.bookkeeper.component }}
             topologyKey: "kubernetes.io/hostname"
-        {{ else }}
+          {{ else }}
           {{ .Values.bookkeeper.affinity.type }}:
             - weight: 100
               podAffinityTerm:
@@ -98,13 +98,14 @@ spec:
                       values:
                       - {{ .Values.bookkeeper.component }}
                 topologyKey: "kubernetes.io/hostname"
-        {{ end }}
+          {{ end }}
         {{- end }}
       terminationGracePeriodSeconds: {{ .Values.bookkeeper.gracePeriod }}
-    {{- if and .Values.rbac.enabled .Values.rbac.psp }}
-      serviceAccountName: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
-    {{- end}}
+      serviceAccountName: {{ .Values.bookkeeper.service_account.name }}
       initContainers:
+      {{- include "pulsar.gcp.init-sia" . | nindent 6 }}
+      {{$data := dict "service_account" .Values.bookkeeper.service_account.name }}
+      {{- include "pulsar.init-cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before deploying the bookies
       - name: pulsar-bookkeeper-verify-clusterid
@@ -125,6 +126,9 @@ spec:
         volumeMounts:
         {{- include "pulsar.bookkeeper.certs.volumeMounts" . | nindent 8 }}
       containers:
+      {{- include "pulsar.gcp.sia" . | nindent 6 }}
+      {{$data := dict "service_account" .Values.bookkeeper.service_account.name }}
+      {{- include "pulsar.cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}"
         image: "{{ .Values.images.bookie.repository }}:{{ .Values.images.bookie.tag }}"
         imagePullPolicy: {{ .Values.images.bookie.pullPolicy }}
@@ -216,6 +220,8 @@ spec:
         {{- end }}
         {{- include "pulsar.bookkeeper.certs.volumeMounts" . | nindent 8 }}
       volumes:
+      {{$data := dict "service_account_configmap" .Values.bookkeeper.service_account.configmap }}
+      {{- include "pulsar.sia-volumes" (merge (dict "Args" $data) . ) | nindent 6 }}
       {{- if not (and (and .Values.persistence .Values.volumes.persistence) .Values.bookkeeper.volumes.persistence) }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.bookkeeper.component }}-{{ .Values.bookkeeper.volumes.journal.name }}"
         emptyDir: {}
