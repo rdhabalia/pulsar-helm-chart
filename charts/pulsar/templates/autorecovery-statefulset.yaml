@@ -107,8 +107,6 @@ spec:
       serviceAccountName: {{ .Values.autorecovery.service_account.name }}
       initContainers:
       {{- include "pulsar.gcp.init-sia" . | nindent 6 }}
-      {{$data := dict "service_account" .Values.autorecovery.service_account.name }}
-      {{- include "pulsar.init-cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       # This initContainer will wait for bookkeeper initnewcluster to complete
       # before deploying the bookies
       - name: pulsar-bookkeeper-verify-clusterid
@@ -125,8 +123,6 @@ spec:
         {{- include "pulsar.autorecovery.certs.volumeMounts" . | nindent 8 }}
       containers:
       {{- include "pulsar.gcp.sia" . | nindent 6 }}
-      {{$data := dict "service_account" .Values.autorecovery.service_account.name }}
-      {{- include "pulsar.cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.autorecovery.component }}"
         image: "{{ .Values.images.autorecovery.repository }}:{{ .Values.images.autorecovery.tag }}"
         imagePullPolicy: {{ .Values.images.autorecovery.pullPolicy }}

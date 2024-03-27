@@ -1244,26 +1244,7 @@ athenz:
         - name: sia_config
           key: sia_config
           path: sia_config
-  cameo:
-    resources:
-      requests:
-        memory: "128M"
-        cpu: "250m"
-      limits:
-        memory: "250M"
-        cpu: "500m"
-    env:
-      - name: CERT_GROUP
-        value: cms.gcp.nonprod.tls
-      - name: CERT_KEY
-        value: cms.gcp.nonprod.tls.cert.pem
-      - name: PRIVATEKEY_KEY
-        value: cms.gcp.nonprod.tls.privatekey.pem
-  volumeMounts:
-    - mountPath: /var/lib/sia
-      name: sia-volume
-    - mountPath: /var/run/tls
-      name: tls-certs
+    sanDnsWildcard: true
   volumes:
     - name: tls-certs
       emptyDir: {}

@@ -59,12 +59,8 @@ spec:
       serviceAccountName: "{{ .Values.toolset.service_account.name }}"
       initContainers:
       {{- include "pulsar.gcp.init-sia" . | nindent 6 }}
-      {{$data := dict "service_account" .Values.toolset.service_account.name }}
-      {{- include "pulsar.init-cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       containers:
       {{- include "pulsar.gcp.sia" . | nindent 6 }}
-      {{$data := dict "service_account" .Values.toolset.service_account.name }}
-      {{- include "pulsar.cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.toolset.component }}"
         image: "{{ .Values.images.broker.repository }}:{{ .Values.images.broker.tag }}"
         imagePullPolicy: {{ .Values.images.broker.pullPolicy }}

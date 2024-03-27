@@ -60,6 +60,18 @@ Create sia container
       value: "1"
     - name: ATHENZ_GKE_OMEGA_CLUSTER
       value: {{ .Values.omega.cluster }}-{{ .Values.omega.clusterColo }}
+    - name: ATHENZ_SIA_POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: ATHENZ_SIA_POD_HOSTNAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: ATHENZ_SIA_POD_SUBDOMAIN
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.serviceAccountName
   resources:
 {{ toYaml .Values.athenz.sia.resources | indent 4 }}
   volumeMounts:

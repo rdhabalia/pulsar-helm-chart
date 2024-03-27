@@ -41,7 +41,7 @@ data:
       , "refresh_interval": {{ .Values.athenz.refresh_interval }}
       {{ end }}
       {{ if .Args.sandns_wildcard }}
-      , "sandns_wildcard": true
+      , "sandns_wildcard": {{.Args.sandns_wildcard}}
       {{ end }}
     }
 {{- end -}}

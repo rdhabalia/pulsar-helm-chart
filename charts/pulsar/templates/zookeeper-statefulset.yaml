@@ -102,12 +102,8 @@ spec:
       initContainers:
       ## sia init container
       {{- include "pulsar.gcp.init-sia" . | nindent 6 }}
-      {{$data := dict "service_account" .Values.zookeeper.service_account.name }}
-      {{- include "pulsar.init-cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       containers:
       {{- include "pulsar.gcp.sia" . | nindent 6 }}
-      {{$data := dict "service_account" .Values.zookeeper.service_account.name }}
-      {{- include "pulsar.cameo" (merge (dict "Args" $data) . ) | nindent 6 }}
       - name: "{{ template "pulsar.fullname" . }}-{{ .Values.zookeeper.component }}"
         image: "{{ .Values.images.zookeeper.repository }}:{{ .Values.images.zookeeper.tag }}"
         imagePullPolicy: {{ .Values.images.zookeeper.pullPolicy }}
